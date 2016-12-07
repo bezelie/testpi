@@ -1,2 +1,2 @@
-# testpi
-for test programs
+# pi
+code for Raspberry Pi
