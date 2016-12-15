@@ -1,0 +1,10 @@
+#touchArea{
+    width: 100%;
+    height: auto;
+}
+
+#touchImage{
+    width: 100%;
+    height: auto;
+    -webkit-touch-callout: none;
+}

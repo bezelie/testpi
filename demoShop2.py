@@ -1,32 +1,37 @@
-# -*- coding: utf-8 -*-
-# Bezelie Face Recognition Test
-# カメラで顔を認識したら喋る
+# -*- coding: utf-8 -*- 
+# Bezelie Special Code for Shanghi-Donya
+# +Face Recognition 
 
 import picamera
 import picamera.array
-import cv2              # Open CV 2
+import cv2
 import pygame
-import sys              # for sys.exit()
+import sys
 import subprocess
-import bezelie
 import csv
+import datetime
 from time import sleep
 from random import randint
+#import RPi.GPIO as GPIO
+import bezelie
 
-csvFile = "bezeTalkFace.csv"
+csvFile = "bezeTalkShop.csv"
 pygame.init()
 size=(800,480)
 screen = pygame.display.set_mode(size)
+openTime = 0
+closeTime = 24
 
-def bezeTalk(distance):
+# Definition
+def timeMessage(timeSlot):
   data = []
   with open(csvFile, 'rb') as f:  # opening the data file to read
-    for i in csv.reader(f):
+    for i in csv.reader(f):       
       data.append(i)              # raw data
 
   data1 = []
   for index,i in enumerate(data): # making candidate list
-    if i[1]=="long" or i[1]=="short":            # matching check
+    if i[1]==timeSlot:            # Checking time
       j = int(i[3])*randint(1,100)# Adding random to probability
       data1.append(i+[j]+[index]) # Candidates data
 
@@ -43,7 +48,7 @@ def bezeTalk(distance):
 def pygame_imshow(array):
   b,g,r = cv2.split(array)
   rgb = cv2.merge([r,g,b])
-  surface1 = pygame.surfarray.make_surface(rgb)       
+  surface1 = pygame.surfarray.make_surface(rgb)
   surface2 = pygame.transform.rotate(surface1, -90)
   surface3 = pygame.transform.flip(surface2, True, False)
   screen.blit(surface3, (0,0))
@@ -54,8 +59,6 @@ cascade = cv2.CascadeClassifier(cascade_path)
 
 # Get Started
 bezelie.centering()
-yaw = 0
-delta = 1
 
 # Main Loop
 with picamera.PiCamera() as camera:
@@ -82,36 +85,50 @@ with picamera.PiCamera() as camera:
           # rect[0:2]+rect[2:4]:長方形の右下の座標
           cv2.rectangle(stream.array, tuple(rect[0:2]),tuple(rect[0:2]+rect[2:4]), (0,255,0), thickness=4)
 
-        bezelie.movePit (-15) # 背伸びをさせる
+try:
+  while (True):
+    now = datetime.datetime.now()
+    print now
+    if now.hour >= openTime and now.hour < closeTime: # Activate only in the business hour
+      with picamera.PiCamera() as camera:
+        camera.resolution = (800, 480)                # Display Resolution
+        camera.framerate = 30                         # Frame Rate Max = 30fps
+        camera.rotation = 180                         # Up side Down
+        camera.led = False
+        camera.start_preview()
         sleep (0.2)
-        bezelie.moveRot ( 10)
-        sleep (0.2)
-        bezelie.moveRot (-10)
-        sleep (0.4)
-        bezelie.moveRot ( 0)
-        bezeTalk ("long")
-        #subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "こんにちわー" | aplay', shell=True)
-        sleep(0.5)
-        bezelie.movePit (0, 1)
-        sleep(0.2)
+      
+        pit = 0
+        while (True):
+          bezelie.moveRot (-5)
+          sleep (0.2)
+          bezelie.moveYaw (-40, 2)
+          sleep (0.5)
+          bezelie.moveRot ( 5)
+          sleep (0.2)
+          bezelie.moveYaw ( 40, 2)
+          sleep (1)
+          bezelie.moveRot (-5)
+          sleep (0.2)
+          bezelie.moveYaw ( 0, 2)
+          bezelie.moveRot ( 0)
+          sleep (0.5)
+          bezelie.movePit (-15)
+          sleep (0.2)
+          bezelie.moveRot ( 10)
+          sleep (0.2)
+          bezelie.moveRot (-10)
+          sleep (0.4)
+          bezelie.moveRot ( 0)
+          timeMessage("afternoon")
+          sleep (0.5)
+          pit += 5
+          if pit > 10:
+            pit = -15
+          bezelie.movePit (pit)
+          sleep (0.2)
+    else:
+      print "営業時間外です"
+      sleep(60)
 
-      # pygameで画像を表示
-      pygame_imshow(stream.array)
-
-      # "q"を入力でアプリケーション終了
-      for e in pygame.event.get():
-        if e.type == pygame.KEYDOWN:
-          if e.key == pygame.K_q:
-            pygame.quit()
-            sys.exit()
-
-      # streamをリセット
-      stream.seek(0)
-      stream.truncate()
-
-      # yawサーボを回す
-      bezelie.moveYaw (yaw)
-      sleep (0.2)
-      yaw = yaw + delta
-      if yaw > 15 or yaw < -15:
-        delta = delta * -1
+except:

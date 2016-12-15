@@ -14,8 +14,8 @@ csvFile = "bezeTalkStep.csv"
 # Definition
 trigger_pin = 18    # GPIO 18
 echo_pin = 23       # GPIO 23
-short = 10
-long = 400
+short = 50
+long = 200
 
 # Set Up
 GPIO.setmode(GPIO.BCM)
@@ -81,7 +81,8 @@ while True:
     bezelie.moveRot (0)
     time.sleep(0.5)
     timeMessage("step")
+    time.sleep(3)
   else:
-    time.sleep(0.5)
+    time.sleep(1)
 
 GPIO.cleanup()
