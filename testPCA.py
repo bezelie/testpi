@@ -5,6 +5,13 @@ from time import sleep
 import smbus
 import math
 
+#GPIO.setmode(GPIO.BCM)
+bus = smbus.SMBus(1)
+address_pca9685 = 0x40 # maybe 50
+
+resetPCA9685()
+setPCA9685Freq(50)
+
 # Constants
 pulseMax = 520 #
 pulseMin = 100 #
@@ -18,7 +25,8 @@ rotMin = -30   # Clockwise
 rotMax =  30   # AntiClockwise
 yawMin = -40   # Clocwise
 yawMax =  40   # AntiClockWise
-pwm.setPWMFreq(47)   # Set frequency to 50 Hz
+#pwm = PWM(0x40)
+#pwm.setPWMFreq(47)   # Set frequency to 50 Hz
 servoStep = 5
 defaultSpeed = 0
 
@@ -43,13 +51,6 @@ def setPCA9685Freq(freq):
   sleep(0.005)
   bus.write_byte_data(address_pca9685, 0x00, oldmode | 0xa1)
 
-def setPCA9685Duty(channel, on, off):
-  channelpos = 0x6 + 4*channel
-  try:
-    bus.write_i2c_block_data(address_pca9685, channelpos, [on&0xFF, on>>8, off&0xFF, off>>8] )
-  except IOError:
-    pass
-
 def getPCA9685Duty(id, val):
   val_min = -90
   val_max = 90
@@ -60,6 +61,13 @@ def getPCA9685Duty(id, val):
     servo_max = 360 # 50Hzで1.8ms
   duty = (servo_min-servo_max)*(val-val_min)/(val_max-val_min) + servo_max
   return int(duty)
+
+def setPCA9685Duty(channel, on, off):
+  channelpos = 0x6 + 4*channel
+  try:
+    bus.write_i2c_block_data(address_pca9685, channelpos, [on&0xFF, on>>8, off&0xFF, off>>8] )
+  except IOError:
+    pass
 
 def movePit (pit, speed=defaultSpeed):
   global pitNow
@@ -80,24 +88,20 @@ def movePit (pit, speed=defaultSpeed):
     pwm.setPWM(2, 0, pitNow + pitAdj)
 
 
-#GPIO.setmode(GPIO.BCM)
-bus = smbus.SMBus(1)
-address_pca9685 = 0x40
-
-resetPCA9685()
-setPCA9685Freq(50)
-
 degree = 0
 servoID = 0
+duty = 380
+# mid 380
+# min 140 = clock 90 degree
+# max 620 = anti-Clock 90 degree
 
 try:
-  while degree < 100:
-    print degree
-    duty0 = getPCA9685Duty(0, degree)
-    print duty0
-    setPCA9685Duty(servoID, 0, duty0)
+  while duty < 700:
+#    duty0 = getPCA9685Duty(0, degree)
+    print duty
+    setPCA9685Duty(servoID, 0, duty)
     sleep(0.2)
-    degree += 1
+    duty += 1
 
 except KeyboardInterrupt:
   pass
