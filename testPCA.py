@@ -9,8 +9,6 @@ import math
 bus = smbus.SMBus(1)
 address_pca9685 = 0x40 # maybe 50
 
-resetPCA9685()
-setPCA9685Freq(50)
 
 # Constants
 pulseMax = 520 #
@@ -87,16 +85,18 @@ def movePit (pit, speed=defaultSpeed):
         pitNow = pitDest
     pwm.setPWM(2, 0, pitNow + pitAdj)
 
+resetPCA9685()
+setPCA9685Freq(50)
 
 degree = 0
-servoID = 0
-duty = 380
+servoID = 1
 # mid 380
 # min 140 = clock 90 degree
 # max 620 = anti-Clock 90 degree
+duty = 300
 
 try:
-  while duty < 700:
+  while duty < 380:
 #    duty0 = getPCA9685Duty(0, degree)
     print duty
     setPCA9685Duty(servoID, 0, duty)
@@ -105,5 +105,4 @@ try:
 
 except KeyboardInterrupt:
   pass
-
 GPIO.cleanup()
