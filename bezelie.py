@@ -6,7 +6,7 @@ import smbus
 import math
 
 bus = smbus.SMBus(1)
-address_pca9685 = 0x40 # If you connect other I2C devices, you might change this.
+address_pca9685 = 0x40 # When you connect other I2C devices, you may have to change this number.
 
 # Constants
 dutyMax = 490     #
@@ -17,7 +17,7 @@ steps = 1         #
 # Global Valiables
 headNow = backNow = stageNow = dutyCenter
 
-# Definitions
+# Functions
 def initPCA9685():
   bus.write_byte_data(address_pca9685, 0x00, 0x00)
   freq = 0.9*50
@@ -86,7 +86,7 @@ def moveCenter ():
     moveBack (0)
     moveStage (0)
 
-# centering
+# Centering Servo Motors
 try:
     moveHead (20)
     moveHead (-20)
