@@ -14,17 +14,18 @@ CHANNELS = 1              #モノラル
 RATE = 16000              #サンプル周波数 取り込み１回分の時間
 CHUNK = 2**11             #取り込み１回分のデータサイズ
 RECORD_SECONDS = 2        #録音する時間の長さ
-WAVE_OUTPUT_FILENAME = "test.wav"
+WAVE_OUTPUT_FILENAME = "test2.wav"
 audio = pyaudio.PyAudio() #pyaudioのインスタンスaudioを生成
 
 # Centering All Servos
-#bezelie.initPCA9685()
-#bezelie.moveCenter()
+bezelie.initPCA9685()
+bezelie.moveCenter()
 
 # Main Loop
 try:
   while (True):
-    subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "ろくおんかいし" | aplay', shell=True)
+    bezelie.moveHead (20)
+    subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "録音開始" | aplay', shell=True)
     sleep (0.1)
     print ("recording...")
 # Record
@@ -37,7 +38,7 @@ try:
       data = stream.read (CHUNK )
       frames.append (data )
     subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "録音終了" | aplay', shell=True)
-    sleep (0.1)
+    bezelie.moveHead (0)
     print ("finished recording")
     stream.stop_stream()           # streamを停止
     stream.close()                 # streamを開放
@@ -48,7 +49,7 @@ try:
     waveFile.writeframes(b''.join(frames))
     waveFile.close()
 # Play
-    subprocess.call('aplay test.wav', shell=True)
+    subprocess.call('aplay "'+ WAVE_OUTPUT_FILENAME +'"', shell=True)
     sleep (4)
 
 except KeyboardInterrupt:
