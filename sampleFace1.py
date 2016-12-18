@@ -15,7 +15,7 @@ bezelie.moveCenter()
 # Main Loop
 with picamera.PiCamera() as camera:                         # Open Pi-Camera as camera
   with picamera.array.PiRGBArray(camera) as stream:         # Open Video Stream from Pi-Camera as stream
-    camera.resolution = (800, 480)                          # Display Resolution
+    camera.resolution = (600, 400)                          # Display Resolution
     camera.hflip = True                                     # Vertical Flip 
     camera.vflip = True                                     # Horizontal Flip
 
@@ -25,8 +25,8 @@ with picamera.PiCamera() as camera:                         # Open Pi-Camera as 
       facerect = cascade.detectMultiScale(gray,             # Find face from gray
         scaleFactor=1.9,                                    # 1.1 - 1.9 :the bigger the quicker & less acurate 
         minNeighbors=1,                                     # 3 - 6 : the smaller the more easy to detect
-        minSize=(200,200),                                  # Minimam face size 
-        maxSize=(400,400))                                  # Maximam face size
+        minSize=(100,200),                                  # Minimam face size 
+        maxSize=(300,400))                                  # Maximam face size
 
       if len(facerect) > 0:
         bezelie.moveHead (20)
