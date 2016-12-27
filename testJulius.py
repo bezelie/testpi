@@ -2,10 +2,10 @@
 import socket
 import subprocess
 import xml.etree.ElementTree as ET
-import RPi.GPIO as GPIO
-import cStringIO
+# import RPi.GPIO as GPIO
+# import cStringIO
  
-HOST = "192.168.10.2"
+HOST = "172.28.5.74"
 PORT = 10500
  
 PORT_RED = 16
@@ -19,16 +19,16 @@ colors = {
   u"曜日" : [False, False, False]
 }
  
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(PORT_RED, GPIO.OUT)
-GPIO.setup(PORT_GREEN, GPIO.OUT)
-GPIO.setup(PORT_BLUE, GPIO.OUT)
+# GPIO.setmode(GPIO.BCM)
+# GPIO.setup(PORT_RED, GPIO.OUT)
+# GPIO.setup(PORT_GREEN, GPIO.OUT)
+# GPIO.setup(PORT_BLUE, GPIO.OUT)
    
-def changeColor(colorName):
-  GPIO.output(PORT_RED, colors[colorName][0])
-  GPIO.output(PORT_GREEN, colors[colorName][1])
-  GPIO.output(PORT_BLUE, colors[colorName][2])
-  print colorName
+# def changeColor(colorName):
+#  GPIO.output(PORT_RED, colors[colorName][0])
+#  GPIO.output(PORT_GREEN, colors[colorName][1])
+#  GPIO.output(PORT_BLUE, colors[colorName][2])
+#  print colorName
 
 def main():
  
