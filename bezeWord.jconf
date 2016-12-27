@@ -1,7 +1,7 @@
 -w bezeWord.dic                               #単語辞書ファイル
--v model/lang_m/bccwj.60k.htkdic          #N-gram、または文法用の単語辞書ファイルを指定する
--h model/phone_m/jnas-tri-3k16-gid.binhmm #使用するHMM定義ファイル
--hlist model/phone_m/logicalTri           #HMMlistファイルを指定する
+-v /home/pi/dictation-kit-v4.4/model/lang_m/bccwj.60k.htkdic          #N-gram、または文法用の単語辞書ファイルを指定する
+-h /home/pi/dictation-kit-v4.4/model/phone_m/jnas-tri-3k16-gid.binhmm #使用するHMM定義ファイル
+-hlist /home/pi/dictation-kit-v4.4/model/phone_m/logicalTri           #HMMlistファイルを指定する
 -lmp 8.0 -2.0
 -lmp2 8.0 -2.0
 -b 1500
