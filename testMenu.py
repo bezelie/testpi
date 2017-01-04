@@ -18,7 +18,7 @@ head.set(0)
 back.set(0)
 stage.set(0)
 
-def runFunction1():
+def editorFunction():
   titleLabelWidget.config(text = "せりふデータを編集します")
   subprocess.call('sudo leafpad /home/pi/bezelie/testpi/bezeTalk.csv', shell=True)
 
@@ -26,7 +26,7 @@ def speakerFunction():
   titleLabelWidget.config(text = "音がでましたか？")
   subprocess.call('aplay Front_Center.wav', shell=True)
 
-def runFunction3():
+def webFunction():
   titleLabelWidget.config(text = "オンラインマニュアルを開きます")
   subprocess.call('epiphany http://bezelie.com', shell=True)
 
@@ -266,19 +266,19 @@ picturesButtonWidget = Tkinter.Button(mainFrame,
   text = "画像ディレクトリの表示",
   command = picturesFunction)
 
-buttonWidget1 = Tkinter.Button(mainFrame,
+editorButtonWidget = Tkinter.Button(mainFrame,
   background = "white", foreground = "blue",
   height = 1, width = 20,
   font = ("Times", 16, "normal"),
   text = "せりふデータの編集",
-  command = runFunction1)
+  command = editorFunction)
 
-buttonWidget3 = Tkinter.Button(mainFrame,
+webButtonWidget = Tkinter.Button(mainFrame,
   background = "white", foreground = "blue",
   height = 1, width = 20,
   font = ("Times", 16, "normal"),
   text = "オンラインマニュアル",
-  command = runFunction3)
+  command = webFunction)
 
 configButtonWidget = Tkinter.Button(mainFrame,
   background = "white", foreground = "blue",
@@ -313,17 +313,14 @@ speakerButtonWidget.grid(
   column = 0, row = 7)
 picturesButtonWidget.grid(
   column = 0, row = 8)
-buttonWidget1.grid(
+editorButtonWidget.grid(
   column = 0, row = 9)
-buttonWidget3.grid(
+webButtonWidget.grid(
   column = 0, row = 10)
 configButtonWidget.grid(
   column = 0, row = 11)
 exitButtonWidget.grid(
   column = 0, row = 12)
-
-
-#  configWindow.mainloop()  # このメインループを実行することで初めて画像が表示される。
 
 #button1Instance.bind('<Leave>', offFunction)
 
