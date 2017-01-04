@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Bezelie test code for Raspberry Pi : Launcher Menu
 
@@ -7,7 +8,7 @@ import subprocess
 
 mainWindow = Tkinter.Tk() # Tk Objectのインスタンスを生成
 mainWindow.title("Test Menu")
-mainWindow.geometry("320x280")
+mainWindow.geometry("320x280+100+50")  # widthxhight+Xlocation+Ylocation
 
 # X Window Systemアプリの起動
 def editorFunction():

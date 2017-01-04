@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Bezelie Sample Code for Raspberry Pi : Talking Test by AquesTalk Pi
 

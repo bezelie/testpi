@@ -1,11 +1,13 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Bezelie Python Module for Raspberry Pi
 import RPi.GPIO as GPIO
 from time import sleep
-import smbus
+import smbus  # I2C module
 import math
+import csv
 
-bus = smbus.SMBus(1)
+bus = smbus.SMBus(1) # I2C
 address_pca9685 = 0x40 # When you connect other I2C devices, you may have to change this number.
 
 # Constants
@@ -16,6 +18,19 @@ steps = 1         #
 
 # Global Valiables
 headNow = backNow = stageNow = dutyCenter
+
+# Read Config File
+headAdj = backAdj = stageAdj = 0
+csvFile = "bezeConfig.csv"
+data = []
+with open(csvFile, 'rb') as f:
+  for i in csv.reader(f):
+    data.append(i)
+
+  for i in data:
+    if i[0] == "headAdj":headAdj=int(i[1])
+    if i[0] == "backAdj":backAdj=int(i[1])
+    if i[0] == "stageAdj":stageAdj=int(i[1])
 
 # Functions
 def initPCA9685():
@@ -61,41 +76,39 @@ def moveServo (id, degree, adj, max, min, speed, now):
   return (now)
 
 def moveHead (degree, speed=1):
-  adj = 0       # Head servo adjustment
+  global headAdj
   max = 360     # Downward limit
   min = 280     # Upward limit
   global headNow
-  headNow = moveServo (2, degree, adj, max, min, speed, headNow)
+  headNow = moveServo (2, degree, headAdj, max, min, speed, headNow)
 
 def moveBack (degree, speed=1):
-  adj = 0       # Back servo adjustment
+  global backAdj
   max = 380     # AntiClockwise limit
   min = 220     # Clockwise limit
   global backNow
-  backNow = moveServo (1, degree, adj, max, min, speed, backNow)
+  backNow = moveServo (1, degree, backAdj, max, min, speed, backNow)
 
 def moveStage (degree, speed=1):
-  adj = 0      # Stage servo adjustment
+  global stageAdj
   max = 390    # AntiClockWise limit
   min = 210    # Clocwise limit
   global stageNow
-  stageNow = moveServo (0, degree, adj, max, min, speed,stageNow)
+  stageNow = moveServo (0, degree, stageAdj, max, min, speed,stageNow)
 
 def moveCenter ():
-    moveHead (0)
-    moveBack (0)
-    moveStage (0)
+  moveHead (headAdj)
+  moveBack (backAdj)
+  moveStage (stageAdj)
 
 # Centering Servo Motors
-try:
-    moveHead (20)
-    moveHead (-20)
-    moveHead (0)
-    moveBack (20)
-    moveBack (-20)
-    moveBack (0)
-    moveStage (20)
-    moveStage (-20)
-    moveStage (0)
-except KeyboardInterrupt:
-  print " Interrupted by Keyboard"
+if __name__ == "__main__":  # Do only when this is done as a script
+  moveHead (20)
+  moveHead (-20)
+  moveHead (headAdj)
+  moveBack (20)
+  moveBack (-20)
+  moveBack (backAdj)
+  moveStage (20)
+  moveStage (-20)
+  moveStage (stageAdj)
