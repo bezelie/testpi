@@ -2,16 +2,16 @@
 # -*- coding:utf-8 -*-
 # Bezelie Sample Code for Raspberry Pi : Tweet Talker
 
-import json
-from requests_oauthlib import OAuth1Session
 from time import sleep
 import subprocess
+import json
+import twitterInfo as info  # Twitter情報ファイル
+from requests_oauthlib import OAuth1Session  # Twitter認証モジュール
 import bezelie
-import twitterInfo as info
 
 # variables
 talkSpeed = 140  # AquesTalk Piの発話速度。50〜300で大きいほど速くなる。デフォルトは100。
-interval = 10  # 新しいツイートがあるかどうかをチェックする間隔。（秒）
+interval = 30  # 新しいツイートがあるかどうかをチェックする間隔。（秒）
 
 # APIのURL
 url = "https://api.twitter.com/1.1/statuses/user_timeline.json"
