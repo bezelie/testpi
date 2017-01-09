@@ -3,20 +3,20 @@
 # Bezelie demo Code for Raspberry Pi : Voice Tweeter
 
 from time import sleep
-import socket
 import subprocess
-import xml.etree.ElementTree as ET
 import json
-from requests_oauthlib import OAuth1Session
+import socket #  ソケット通信モジュール
+import xml.etree.ElementTree as ET # XMLエレメンタルツリー変換モジュール
+from requests_oauthlib import OAuth1Session  # 認証モジュール
+import twitterInfo as info  # Twitter情報ファイル
 import bezelie
-import twitterInfo as info
 
 # Variables
 bufferSize = 1024 # 受信するデータの最大バイト数。できるだけ小さな２の倍数が望ましい。
 
 # Juliusをサーバモジュールモードで起動＝音声認識サーバーにする
 print "Pleas Wait For A While"  # サーバーが起動するまで時間がかかるので待つ
-p = subprocess.Popen(["sh /home/pi/bezelie/testpi/julius2.sh"], stdout=subprocess.PIPE, shell=True)
+p = subprocess.Popen(["sh julius2.sh"], stdout=subprocess.PIPE, shell=True)
   # julius2.sh = 自然言語認識版設定ファイル「julius2.jconf」による起動。
 pid = p.stdout.read()  # 終了時にJuliusのプロセスをkillするためプロセスIDを保存しておく 
 print "Julius's Process ID is "+pid
@@ -40,6 +40,7 @@ client.connect((myIP, 10500))  # Juliusサーバーに接続。portはデフォ�
 
 # Twitter APIのURL
 url = "https://api.twitter.com/1.1/statuses/update.json"
+  # [manual](http://westplain.sakuraweb.com/translate/twitter/Documentation/REST-APIs/Public-API/POST-statuses-update.cgi)
 
 # Twitterインスタンスの生成
 twitter = OAuth1Session(
@@ -68,6 +69,7 @@ try:
         if message != "eom":
           messages = messages + message
         else:
+          bezelie.moveHead (20)
           params ={'status' : messages}  # ツイート内容
           response = twitter.post(url, params = params)  # twitterにpost
           if response.status_code == 200:  # status_codeが200なら成功
@@ -77,6 +79,7 @@ try:
             print "同じメッセージは繰り返しツイートできません"
           else:
             print("ERROR: %d" % response.status_code)  # エラーの場合はメッセージ表示
+          bezelie.moveHead (0,1)
           sleep (1)
           print "Please Speak"
           data = ""  # 認識終了したのでデータをリセットする

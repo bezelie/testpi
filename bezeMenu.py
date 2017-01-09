@@ -2,25 +2,18 @@
 # -*- coding: utf-8 -*-
 # Bezelie test code for Raspberry Pi : GUI
 
-import csv
+# import csv
+import re
 import sys
 import Tkinter  # Tk Interface
 from PIL import Image, ImageTk  # Python Image Library
 import subprocess
 import bezelie
-import bezeConfig
+# import bezeConfig
 
-# csvFile = "bezeConfig.csv"
+configFile = "bezeConfig.py"
 originalData = []  # Make empty list
 configWindow = None
-
-# Read bezeConfig.py
-headAdj = bezeConfig.headAdj
-backAdj = bezeConfig.backAdj
-stageAdj = bezeConfig.stageAdj
-awaking = bezeConfig.awakingTime
-sleeping = bezeConfig.sleepingTime
-interval = bezeConfig.intervalTime
 
 def centeringFunction():
 #  titleLabelWidget.config(text = "サーボをセンタリングします")
@@ -252,7 +245,19 @@ def configFunction():
     doneConfigButton.grid(column = 2, row = 7)
     cancelConfigButton.grid(column = 0, row = 7)
 
-    # Read data from csv file
+    # Read bezeConfig.py
+    with open(configFile, 'r') as f:
+      list = f.readlines()
+
+    for i in list:
+      m = re.search("= (.+)\n",i)
+      if "headAdj" in i:headAdj = m.group(1)
+      if "backAdj" in i:backAdj = m.group(1)
+      if "stageAdj" in i:stageAdj = m.group(1)
+      if "awakingTime" in i:awaking = m.group(1)
+      if "sleepingTime" in i:sleeping = m.group(1)
+      if "intervalTime" in i:interval = m.group(1)
+
     headAdjDisp.config(text = headAdj)
     backAdjDisp.config(text = backAdj)
     stageAdjDisp.config(text = stageAdj)

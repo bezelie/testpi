@@ -1,38 +1,38 @@
 # -*- coding: utf-8 -*-
 # Bezelie test code for Raspberry Pi : GUI
 
+import csv
 import sys
 import Tkinter  # Tk Interface
 from PIL import Image, ImageTk  # Python Image Library
 import subprocess
 import bezelie
 
-mainWindow = Tkinter.Tk() # Tk Objectのインスタンスを生成
-mainWindow.title("Bezelie Menu")
-mainWindow.geometry("640x520")
+csvFile = "bezeConfig.csv"
+originalData = []  # Make empty list
 
-head = Tkinter.IntVar()
-back = Tkinter.IntVar()
-stage = Tkinter.IntVar()
-head.set(0)
-back.set(0)
-stage.set(0)
-
-def editorFunction():
-  titleLabelWidget.config(text = "せりふデータを編集します")
-  subprocess.call('sudo leafpad /home/pi/bezelie/testpi/bezeTalk.csv', shell=True)
+def centeringFunction():
+  titleLabelWidget.config(text = "サーボをセンタリングしました")
+  subprocess.call('python /home/pi/bezelie/pi/bezelie.py', shell=True)
+  head.set(0)
+  back.set(0)
+  stage.set(0)
 
 def speakerFunction():
   titleLabelWidget.config(text = "音がでましたか？")
   subprocess.call('aplay Front_Center.wav', shell=True)
 
+def picturesFunction():
+  titleLabelWidget.config(text = "Picturesディレクトリの中を表示しました")
+  subprocess.call('gpicview /home/pi/Pictures/', shell=True)
+
+def editorFunction():
+  titleLabelWidget.config(text = "せりふデータを編集します")
+  subprocess.call('sudo leafpad /home/pi/bezelie/testpi/bezeTalk.csv', shell=True)
+
 def webFunction():
   titleLabelWidget.config(text = "オンラインマニュアルを開きます")
   subprocess.call('epiphany http://bezelie.com', shell=True)
-
-def centeringFunction():
-  titleLabelWidget.config(text = "サーボをセンタリングしました")
-  subprocess.call('python /home/pi/bezelie/pi/bezelie.py', shell=True)
 
 def moveHeadFunction(n):
   bezelie.moveHead(head.get()) 
@@ -41,45 +41,14 @@ def moveBackFunction(n):
 def moveStageFunction(n):
   bezelie.moveStage(stage.get()) 
 
-def picturesFunction():
-  titleLabelWidget.config(text = "Picturesディレクトリの中を表示しました")
-  subprocess.call('gpicview /home/pi/Pictures/', shell=True)
-
-def headPlusFunction():
-  pass
-
-def headMinusFunction():
-  pass
-
-def headAdjFunction():
-  pass
-
-def backPlusFunction():
-  pass
-
-def backMinusFunction():
-  pass
-
-def backAdjFunction():
-  pass
-
-def stagePlusFunction():
-  pass
-
-def stageMinusFunction():
-  pass
-
-def stageAdjFunction():
-  pass
-
-
+# Make A Config Menu
 def configFunction():
   configWindow = Tkinter.Toplevel()
   configWindow.title("Config Menu")
+  configWindow.geometry("500x300")
 
   configFrame = Tkinter.Frame(configWindow,
-    height = 20, width = 60,
-    background = "yellow")
+    background = "white")
 
   titleConfigLabel = Tkinter.Label(configFrame,
     height = 1, width = 20,
@@ -87,19 +56,9 @@ def configFunction():
     text = "コンフィグメニュー")
 
   headAdjLabel = Tkinter.Label(configFrame,
-    height = 1, width = 20,
+    height = 1, width = 18,
     font = ("Times", 16, "normal"),
-    text = "HEAD センタリング調整値")
-
-  backAdjLabel = Tkinter.Label(configFrame,
-    height = 1, width = 20,
-    font = ("Times", 16, "normal"),
-    text = "BACK センタリング調整値")
-
-  stageAdjLabel = Tkinter.Label(configFrame,
-    height = 1, width = 20,
-    font = ("Times", 16, "normal"),
-    text = "STAGE センタリング調整値")
+    text = "HEADセンタリング調整")
 
   headPlusButton = Tkinter.Button(configFrame,
     height = 1, width = 2,
@@ -113,10 +72,16 @@ def configFunction():
     text = "-",
     command = headMinusFunction)
 
+  global headAdjDisp
   headAdjDisp = Tkinter.Label(configFrame,
     height = 1, width = 4,
     font = ("Times", 16, "normal"),
     text = " ")
+
+  backAdjLabel = Tkinter.Label(configFrame,
+    height = 1, width = 18,
+    font = ("Times", 16, "normal"),
+    text = "BACKセンタリング調整")
 
   backPlusButton = Tkinter.Button(configFrame,
     height = 1, width = 2,
@@ -130,10 +95,16 @@ def configFunction():
     text = "-",
     command = backMinusFunction)
 
+  global backAdjDisp
   backAdjDisp = Tkinter.Label(configFrame,
     height = 1, width = 4,
     font = ("Times", 16, "normal"),
     text = " ")
+
+  stageAdjLabel = Tkinter.Label(configFrame,
+    height = 1, width = 18,
+    font = ("Times", 16, "normal"),
+    text = "STAGEセンタリング調整")
 
   stagePlusButton = Tkinter.Button(configFrame,
     height = 1, width = 2,
@@ -147,40 +118,228 @@ def configFunction():
     text = "-",
     command = stageMinusFunction)
 
+  global stageAdjDisp
   stageAdjDisp = Tkinter.Label(configFrame,
     height = 1, width = 4,
     font = ("Times", 16, "normal"),
     text = " ")
 
-  configFrame.pack()
-  titleConfigLabel.grid(
-    column = 0, row = 0)
-  headAdjLabel.grid(
-    column = 0, row = 1)
-  backAdjLabel.grid(
-    column = 0, row = 2)
-  stageAdjLabel.grid(
-    column = 0, row = 3)
-  headPlusButton.grid(
-    column = 1, row = 1)
-  headAdjDisp.grid(
-    column = 2, row = 1)
-  headMinusButton.grid(
-    column = 3, row = 1)
-  backPlusButton.grid(
-    column = 1, row = 2)
-  backAdjDisp.grid(
-    column = 2, row = 2)
-  backMinusButton.grid(
-    column = 3, row = 2)
-  stagePlusButton.grid(
-    column = 1, row = 3)
-  stageAdjDisp.grid(
-    column = 2, row = 3)
-  stageMinusButton.grid(
-    column = 3, row = 3)
+  awakingAdjLabel = Tkinter.Label(configFrame,
+    height = 1, width = 18,
+    font = ("Times", 16, "normal"),
+    text = "起床時間設定")
 
-# フレーム
+  awakingPlusButton = Tkinter.Button(configFrame,
+    height = 1, width = 2,
+    font = ("Times", 16, "normal"),
+    text = "+",
+    command = awakingPlusFunction)
+
+  awakingMinusButton = Tkinter.Button(configFrame,
+    height = 1, width = 2,
+    font = ("Times", 16, "normal"),
+    text = "-",
+    command = awakingMinusFunction)
+
+  global awakingAdjDisp
+  awakingAdjDisp = Tkinter.Label(configFrame,
+    height = 1, width = 4,
+    font = ("Times", 16, "normal"),
+    text = " ")
+
+  sleepingAdjLabel = Tkinter.Label(configFrame,
+    height = 1, width = 18,
+    font = ("Times", 16, "normal"),
+    text = "就寝時間設定")
+
+  sleepingPlusButton = Tkinter.Button(configFrame,
+    height = 1, width = 2,
+    font = ("Times", 16, "normal"),
+    text = "+",
+    command = sleepingPlusFunction)
+
+  sleepingMinusButton = Tkinter.Button(configFrame,
+    height = 1, width = 2,
+    font = ("Times", 16, "normal"),
+    text = "-",
+    command = sleepingMinusFunction)
+
+  global sleepingAdjDisp
+  sleepingAdjDisp = Tkinter.Label(configFrame,
+    height = 1, width = 4,
+    font = ("Times", 16, "normal"),
+    text = " ")
+
+  intervalAdjLabel = Tkinter.Label(configFrame,
+    height = 1, width = 18,
+    font = ("Times", 16, "normal"),
+    text = "発話間隔設定")
+
+  intervalPlusButton = Tkinter.Button(configFrame,
+    height = 1, width = 2,
+    font = ("Times", 16, "normal"),
+    text = "+",
+    command = intervalPlusFunction)
+
+  intervalMinusButton = Tkinter.Button(configFrame,
+    height = 1, width = 2,
+    font = ("Times", 16, "normal"),
+    text = "-",
+    command = intervalMinusFunction)
+
+  global intervalAdjDisp
+  intervalAdjDisp = Tkinter.Label(configFrame,
+    height = 1, width = 4,
+    font = ("Times", 16, "normal"),
+    text = " ")
+
+  doneConfigButton = Tkinter.Button(configFrame,
+    height = 1, width = 6,
+    font = ("Times", 16, "normal"),
+    text = "決定&書込",
+    command = doneConfigFunction)
+
+  cancelConfigButton = Tkinter.Button(configFrame,
+    height = 1, width = 6,
+    font = ("Times", 16, "normal"),
+    text = "キャンセル",
+    command = sys.exit)
+#    command = configWindow.withdraw())
+
+  # Place widgets on the ConfigWindow
+  configFrame.pack()
+  titleConfigLabel.grid(column = 0, row = 0)
+  headAdjLabel.grid(column = 0, row = 1)
+  headPlusButton.grid(column = 1, row = 1)
+  headAdjDisp.grid(column = 2, row = 1)
+  headMinusButton.grid(column = 3, row = 1)
+  backAdjLabel.grid(column = 0, row = 2)
+  backPlusButton.grid(column = 1, row = 2)
+  backAdjDisp.grid(column = 2, row = 2)
+  backMinusButton.grid(column = 3, row = 2)
+  stageAdjLabel.grid(column = 0, row = 3)
+  stagePlusButton.grid(column = 1, row = 3)
+  stageAdjDisp.grid(column = 2, row = 3)
+  stageMinusButton.grid(column = 3, row = 3)
+  awakingAdjLabel.grid(column = 0, row = 4)
+  awakingPlusButton.grid(column = 1, row = 4)
+  awakingAdjDisp.grid(column = 2, row = 4)
+  awakingMinusButton.grid(column = 3, row = 4)
+  sleepingAdjLabel.grid(column = 0, row = 5)
+  sleepingPlusButton.grid(column = 1, row = 5)
+  sleepingAdjDisp.grid(column = 2, row = 5)
+  sleepingMinusButton.grid(column = 3, row = 5)
+  intervalAdjLabel.grid(column = 0, row = 6)
+  intervalPlusButton.grid(column = 1, row = 6)
+  intervalAdjDisp.grid(column = 2, row = 6)
+  intervalMinusButton.grid(column = 3, row = 6)
+  doneConfigButton.grid(column = 2, row = 7)
+  cancelConfigButton.grid(column = 0, row = 7)
+
+  # Read data from csv file
+  with open(csvFile, 'rb') as f:  # Open csv file to read
+    for i in csv.reader(f):  # Read csv to i
+      originalData.append(i)
+
+  for i in originalData:
+    if i[0] == "headAdj":headAdjDisp.config(text = i[1])
+    if i[0] == "backAdj":backAdjDisp.config(text = i[1])
+    if i[0] == "stageAdj":stageAdjDisp.config(text = i[1])
+    if i[0] == "awakingTime":awakingAdjDisp.config(text = i[1])
+    if i[0] == "sleepingTime":sleepingAdjDisp.config(text = i[1])
+    if i[0] == "intervalTime":intervalAdjDisp.config(text = i[1])
+
+def doneConfigFunction():
+  for i in originalData:
+    if i[0] == "headAdj":i[1] = headAdjDisp.cget("text")
+    if i[0] == "backAdj":i[1] = backAdjDisp.cget("text")
+    if i[0] == "stageAdj":i[1] = stageAdjDisp.cget("text")
+    if i[0] == "awakingTime":i[1] = awakingAdjDisp.cget("text")
+    if i[0] == "sleepingTime":i[1] = sleepingAdjDisp.cget("text")
+    if i[0] == "intervalTime":i[1] = intervalAdjDisp.cget("text")
+ 
+  with open(csvFile, 'wb') as f:  # opening the file to overwrite
+    csv.writer(f).writerows(originalData)
+
+def headPlusFunction():
+  s = headAdjDisp.cget("text")
+  i = int(s)+1
+  headAdjDisp.config(text = i)
+  bezelie.moveHead(i)
+
+def headMinusFunction():
+  s = headAdjDisp.cget("text")
+  i = int(s)-1
+  headAdjDisp.config(text = i)
+  bezelie.moveHead(i)
+
+def backPlusFunction():
+  s = backAdjDisp.cget("text")
+  i = int(s)+1
+  backAdjDisp.config(text = i)
+  bezelie.moveBack(i)
+
+def backMinusFunction():
+  s = backAdjDisp.cget("text")
+  i = int(s)-1
+  backAdjDisp.config(text = i)
+  bezelie.moveBack(i)
+
+def stagePlusFunction():
+  s = stageAdjDisp.cget("text")
+  i = int(s)+1
+  stageAdjDisp.config(text = i)
+  bezelie.moveStage(i)
+
+def stageMinusFunction():
+  s = stageAdjDisp.cget("text")
+  i = int(s)-1
+  stageAdjDisp.config(text = i)
+  bezelie.moveStage(i)
+
+def awakingPlusFunction():
+  s = awakingAdjDisp.cget("text")
+  i = int(s)+1
+  awakingAdjDisp.config(text = i)
+
+def awakingMinusFunction():
+  s = awakingAdjDisp.cget("text")
+  i = int(s)-1
+  awakingAdjDisp.config(text = i)
+
+def sleepingPlusFunction():
+  s = sleepingAdjDisp.cget("text")
+  i = int(s)+1
+  sleepingAdjDisp.config(text = i)
+
+def sleepingMinusFunction():
+  s = sleepingAdjDisp.cget("text")
+  i = int(s)-1
+  sleepingAdjDisp.config(text = i)
+
+def intervalPlusFunction():
+  s = intervalAdjDisp.cget("text")
+  i = round(float(s)+0.1,1)
+  intervalAdjDisp.config(text = i)
+
+def intervalMinusFunction():
+  s = intervalAdjDisp.cget("text")
+  i = round(float(s)-0.1,1)
+  intervalAdjDisp.config(text = i)
+
+# メインウィンドウ
+mainWindow = Tkinter.Tk() # Tk Objectのインスタンスを生成
+mainWindow.title("Bezelie Menu")
+mainWindow.geometry("640x520")
+
+head = Tkinter.IntVar()
+back = Tkinter.IntVar()
+stage = Tkinter.IntVar()
+head.set(0)
+back.set(0)
+stage.set(0)
+
+# メインフレーム
 mainFrame=Tkinter.Frame(mainWindow,
   height = 20, width = 60,
   borderwidth = 2,
@@ -218,7 +377,7 @@ centeringButtonWidget = Tkinter.Button(mainFrame,
 
 headScaleWidget = Tkinter.Scale(mainFrame,
   digits = 2,
-  from_ = -90, to = 90,
+  from_ = -20, to = 20,
   length = 240, width = 15,
   sliderlength = 30,
   orient = "horizontal",
@@ -230,7 +389,7 @@ headScaleWidget = Tkinter.Scale(mainFrame,
 
 backScaleWidget = Tkinter.Scale(mainFrame,
   digits = 2,
-  from_ = -90, to = 90,
+  from_ = -30, to = 30,
   length = 240, width = 15,
   sliderlength = 30,
   orient = "horizontal",
@@ -242,7 +401,7 @@ backScaleWidget = Tkinter.Scale(mainFrame,
 
 stageScaleWidget = Tkinter.Scale(mainFrame,
   digits = 2,
-  from_ = -90, to = 90,
+  from_ = -50, to = 50,
   length = 240, width = 15,
   sliderlength = 30,
   orient = "horizontal",
@@ -294,33 +453,21 @@ exitButtonWidget = Tkinter.Button(mainFrame,
   text = "ウィンドウを閉じる",
   command = sys.exit)
 
+# Place widgets on the mainWindow
 mainFrame.pack()
-titleLabelWidget.grid(
-  column = 0, row = 0)
-addressLabelWidget.grid(
-  column = 0, row = 1)
-#logoLabelWidget.grid(
-#  column = 0, row = 2)
-centeringButtonWidget.grid(
-  column = 0, row = 3)
-headScaleWidget.grid(
-  column = 0, row = 4)
-backScaleWidget.grid(
-  column = 0, row = 5)
-stageScaleWidget.grid(
-  column = 0, row = 6)
-speakerButtonWidget.grid(
-  column = 0, row = 7)
-picturesButtonWidget.grid(
-  column = 0, row = 8)
-editorButtonWidget.grid(
-  column = 0, row = 9)
-webButtonWidget.grid(
-  column = 0, row = 10)
-configButtonWidget.grid(
-  column = 0, row = 11)
-exitButtonWidget.grid(
-  column = 0, row = 12)
+titleLabelWidget.grid(column = 0, row = 0)
+addressLabelWidget.grid(column = 0, row = 1)
+#logoLabelWidget.grid(column = 0, row = 2)
+centeringButtonWidget.grid(column = 0, row = 3)
+headScaleWidget.grid(column = 0, row = 4)
+backScaleWidget.grid(column = 0, row = 5)
+stageScaleWidget.grid(column = 0, row = 6)
+speakerButtonWidget.grid(column = 0, row = 7)
+picturesButtonWidget.grid(column = 0, row = 8)
+editorButtonWidget.grid(column = 0, row = 9)
+webButtonWidget.grid(column = 0, row = 10)
+configButtonWidget.grid(column = 0, row = 11)
+exitButtonWidget.grid(column = 0, row = 12)
 
 #button1Instance.bind('<Leave>', offFunction)
 

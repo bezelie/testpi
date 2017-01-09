@@ -23,4 +23,6 @@ weather_json = requests.get(
     'http://weather.livedoor.com/forecast/webservice/json/v1?city={0}'.format(location), proxies=proxies, timeout=5
 ).json()
 
-print(uenc(json.dumps(weather_json, indent=2, ensure_ascii=False)))
+result = uenc(json.dumps(weather_json, indent=2, ensure_ascii=False))
+with open("weather.json", "w") as f:
+  f.writelines(result)

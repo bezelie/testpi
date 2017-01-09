@@ -14,10 +14,10 @@ timeSlot,awaking,カーテンをあけてごらんよとってもいい天気だ
 timeSlot,awaking,早起きは3万納得,100,0
 timeSlot,awaking,今日はいい天気だよ,100,0
 timeSlot,awaking,おはよう,100,0
-timeSlot,bedtime,おやすみ,100,0
-timeSlot,bedtime,僕もう寝るね,100,0
-timeSlot,bedtime,もうおねむだよ,100,0
-timeSlot,bedtime,ぐぅ、ぐぅ、ぐぅ,100,0
+timeSlot,bedtime,おやすみ,100,2
+timeSlot,bedtime,僕もう寝るね,100,1
+timeSlot,bedtime,もうおねむだよ,100,2
+timeSlot,bedtime,ぐぅ、ぐぅ、ぐぅ,100,1
 timeSlot,bedtime,おやすみなさいー,100,0
 timeSlot,evening,眠いけどもうちょっと頑張ろっと,100,0
 timeSlot,evening,カラスはなんで鳴くのかなー,100,0
@@ -51,4 +51,4 @@ timeSlot,noon,やったーもうお昼だよ,100,0
 distance,short,近いねー,100,0
 distance,short,近いよ,100,0
 distance,long,遠いねー,100,0
-distance,long,遠いよ,100,0
+distance,long,遠いよ,90,0

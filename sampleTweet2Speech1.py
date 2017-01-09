@@ -6,7 +6,7 @@ from time import sleep
 import subprocess
 import json
 import twitterInfo as info  # Twitter情報ファイル
-from requests_oauthlib import OAuth1Session  # Twitter認証モジュール
+from requests_oauthlib import OAuth1Session  # 認証モジュール
 import bezelie
 
 # variables
