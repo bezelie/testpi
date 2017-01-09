@@ -1,6 +1,6 @@
-headAdj = 3
-backAdj = -3
+headAdj = 0
+backAdj = 0
 stageAdj = 3
-awakingTime = 7
-sleepingTime = 24
+awakingTime = 8
+sleepingTime = 23
 intervalTime = 1

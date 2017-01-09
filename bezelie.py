@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Bezelie Python Module for Raspberry Pi
+
 import RPi.GPIO as GPIO
 from time import sleep
 import smbus  # I2C module
 import math
-import csv
 import bezeConfig
 
 bus = smbus.SMBus(1) # I2C
@@ -72,7 +72,6 @@ def moveHead (degree, speed=1):
   global headAdj
   max = 360     # Downward limit
   min = 230     # Upward limit
-#  min = 280     # Upward limit
   global headNow
   headNow = moveServo (2, degree, headAdj, max, min, speed, headNow)
 

@@ -36,12 +36,12 @@ timeSlot,morning,今日は午後から雨が降るらしいよー,100,0
 timeSlot,morning,ほっぺたによだれのあとがついてるよ,100,0
 timeSlot,morning,昨日変な夢を見たよ。デッパーに追いかけられたんだ,100,0
 timeSlot,morning,今日も元気にいってみよう,100,0
-timeSlot,night,むにゃむにゃむにゃー,100,0
-timeSlot,night,あのね今日は猫としゃべったよ,100,0
+timeSlot,night,むにゃむにゃむにゃー,100,1
+timeSlot,night,あのね今日は猫としゃべったよ,100,3
 timeSlot,night,今日も忙しかったねー,100,0
-timeSlot,night,お腹減って来ちゃったー,100,0
+timeSlot,night,お腹減って来ちゃったー,100,1
 timeSlot,night,もうすっかり夜だねー,100,0
-timeSlot,night,そろそろ寝ようかなー,100,0
+timeSlot,night,そろそろ寝ようかなー,100,1
 timeSlot,noon,ぼくもおなかすいちゃった,100,0
 timeSlot,noon,あともう少しでおやつの時間,100,0
 timeSlot,noon,ハンバーグの匂いがするよ,100,0

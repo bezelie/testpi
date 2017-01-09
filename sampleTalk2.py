@@ -4,6 +4,7 @@
 # speaking random messages referring to csv file
 
 import csv
+import re  # Regular Expression
 import datetime
 from time import sleep
 from random import randint
@@ -11,17 +12,20 @@ import subprocess
 import bezelie
 
 csvFile = "bezeTalk.csv"
-configFile = "bezeConfig.csv"
-data = []
+configFile = "bezeConfig.py"
 
-with open(configFile, 'rb') as f:
-  for i in csv.reader(f):
-    data.append(i)
+with open(configFile, 'r') as f:
+  list = f.readlines()
 
-  for i in data:
-    if i[0] == "awakingTime":awakingTime=int(i[1])
-    if i[0] == "sleepingTime":sleepingTime=int(i[1])
-    if i[0] == "intervalTime":intervalTime=int(i[1])
+for i in list:
+  m = re.search("= (.+)\n",i)
+  if "awakingTime" in i:awakingTime = int(m.group(1))
+  if "sleepingTime" in i:sleepingTime = int(m.group(1))
+  if "intervalTime" in i:intervalTime = int(m.group(1))
+
+print "awakingTime"+str(awakingTime)
+print "sleepingTime"+str(sleepingTime)
+print  "intervalTime"+str(intervalTime)
 
 # Functions
 def talkMessage(trigger):
