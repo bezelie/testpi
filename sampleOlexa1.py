@@ -12,7 +12,7 @@ import bezelie
 csvFile = "sampleOlexa.csv"  # 対話リスト
 
 # Variables
-muteTime = 3     # 音声入力を無視する時間
+muteTime = 3     # Alexaの返答を音声認識してしまわないように、音声入力を無視する時間
 bufferSize = 1024   # 受信するデータの最大バイト数。できるだけ小さな２の倍数が望ましい。
 
 # Juliusをサーバモジュールモードで起動＝音声認識サーバーにする
@@ -66,7 +66,7 @@ def replyMessage(keyWord):
 # Get Started
 bezelie.initPCA9685()
 bezelie.moveCenter()
-subprocess.call('sudo amixer -q sset Mic 62', shell=True)  # マイクを再びオンにする
+subprocess.call('sudo amixer -q sset Mic 62', shell=True)  # マイク感度を最大にする
 
 # Main Loop
 try:
@@ -74,11 +74,14 @@ try:
   print "Please Speak"
   while True:
     if "</RECOGOUT>\n." in data:  # RECOGOUTツリーの最終行を見つけたら以下の処理を行う
-      root = ET.fromstring('<?xml version="1.0"?>\n' + data[data.find("<RECOGOUT>"):].replace("\n.", ""))
+      try:
+        root = ET.fromstring('<?xml version="1.0"?>\n' + data[data.find("<RECOGOUT>"):].replace("\n.", ""))
         # fromstringはXML文字列からコンテナオブジェクトであるElement型に直接取り込む
-      for whypo in root.findall("./SHYPO/WHYPO"):
-        keyWord = whypo.get("WORD")
-      replyMessage(keyWord)
+        for whypo in root.findall("./SHYPO/WHYPO"):
+          keyWord = whypo.get("WORD")
+        replyMessage(keyWord)
+      except:
+        print "error"
       data = ""  # 認識終了したのでデータをリセットする
     else:
       data = data + client.recv(bufferSize)  # Juliusサーバーから受信
