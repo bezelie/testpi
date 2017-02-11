@@ -4,7 +4,6 @@
 
 from time import sleep
 import csv
-from random import randint
 import subprocess
 import socket #  ソケット通信モジュール
 import xml.etree.ElementTree as ET # XMLエレメンタルツリー変換モジュール
@@ -14,8 +13,8 @@ csvFile = "demoElevator.csv"  # 対話リスト
 
 # Variables
 stroke = 10  # エレベータのボタンを押すためにサーボを回転させる角度
-muteTime = 1     # 音声入力を無視する時間（の半分の秒数）
-bufferSize = 2048 # 受信するデータの最大バイト数。できるだけ小さな２の倍数が望ましい。
+muteTime = 1  # 音声入力を無視する時間（の半分の秒数）
+bufferSize = 1024  # 受信するデータの最大バイト数。できるだけ小さな２の倍数が望ましい。
 
 # Juliusをサーバモジュールモードで起動＝音声認識サーバーにする
 print "Please Wait For A While"  # サーバーが起動するまで時間がかかるので待つ
@@ -25,13 +24,14 @@ pid = p.stdout.read()  # 終了時にJuliusのプロセスをkillするためプ
 print "Julius's Process ID =" +pid
 
 # Juliusサーバーにアクセスするため自分のIPアドレスを取得する 
-getIP = subprocess.Popen(["hostname -I | awk -F' ' '{print $1}'"], stdout=subprocess.PIPE, shell=True)
-myIP = getIP.stdout.read()
-print "My IP is " +myIP
+# getIP = subprocess.Popen(["hostname -I | awk -F' ' '{print $1}'"], stdout=subprocess.PIPE, shell=True)
+# myIP = getIP.stdout.read()
+# print "My IP is " +myIP
 
 # TCPクライアントを作成しJuliusサーバーに接続する
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # clientオブジェクト生成
-client.connect((myIP, 10500))  # Juliusサーバーに接続
+# client.connect((myIP, 10500))  # Juliusサーバーに接続
+client.connect(('localhost', 10500))  # Juliusサーバーに接続
 
 # Functions
 def replyMessage(keyWord):
@@ -40,31 +40,34 @@ def replyMessage(keyWord):
     for i in csv.reader(f):
       data.append(i)              # raw data
 
-  data1 = []
-  for index,i in enumerate(data): # making a candidate list
+  message = ""
+  for i in data:
     if unicode(i[0], 'utf-8')==keyWord:  # i[0]はstrなのでutf-8に変換して比較する必要がある
-      j = randint(1,100)          # Adding random value to probability
-      data1.append(i+[j]+[index]) # Candidates data
+      message = i[1]  # str
 
-  if data1 == []:
-    for index,i in enumerate(data): # making a candidate list
-      if i[0]=='不一致':  # 該当するキーワードが見つからなかった場合は、「不一致」から返答する
-        j = randint(1,100)          # Adding random value to probability
-        data1.append(i+[j]+[index]) # Candidates data
-
-  maxNum = 0
-  for i in data1:                 # decision
-    if i[2] > maxNum:             # Whitch is the max probability.
-      maxNum = i[2]               # Max probability
-      ansNum = i[3]               # Index of answer
-
-  # AquesTalk
-  print "My reply is..."+data[ansNum][1]
-  subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+ data[ansNum ][1] +'" | aplay -q', shell=True)
+  # Talk
+  if message != "":
+    subprocess.call('sudo amixer -q sset Mic 0', shell=True)  #
+    print "You might speak..."+keyWord
+    print "My reply is..."+message
+    subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+ message +'" | aplay -q', shell=True)
+    if keyWord == unicode('一階', 'utf-8'):
+      servo.servo1(stroke)
+    if keyWord == unicode('二階', 'utf-8'):
+      servo.servo2(stroke)
+    if keyWord == unicode('三階', 'utf-8'):
+      servo.servo3(stroke)
+    if keyWord == unicode('四階', 'utf-8'):
+      servo.servo4(stroke)
+    if keyWord == unicode('五階', 'utf-8'):
+      servo.servo5(stroke)
+    servo.moveCenter()
+    subprocess.call('sudo amixer -q sset Mic 62', shell=True)  #
 
 # Get Started
 servo.initPCA9685()
 servo.moveCenter()
+subprocess.call('sudo amixer -q sset Mic 62', shell=True)  #
 
 # Main Loop
 try:
@@ -72,29 +75,15 @@ try:
   print "Please Speak"
   while True:
     if "</RECOGOUT>\n." in data:  # RECOGOUTツリーの最終行を見つけたら以下の処理を行う
-      root = ET.fromstring('<?xml version="1.0"?>\n' + data[data.find("<RECOGOUT>"):].replace("\n.", ""))
+      try:
+        root = ET.fromstring('<?xml version="1.0"?>\n' + data[data.find("<RECOGOUT>"):].replace("\n.", ""))
         # fromstringはXML文字列からコンテナオブジェクトであるElement型に直接取り込む
-      for whypo in root.findall("./SHYPO/WHYPO"):
-        # 認識した語に対する返答を探しランダムで返答する。
-        keyWord = whypo.get("WORD")
-        print "You might speak..."+keyWord
-        replyMessage(keyWord)
-        if keyWord == unicode('一階', 'utf-8'):
-          servo.servo1(stroke)
-        if keyWord == unicode('二階', 'utf-8'):
-          servo.servo2(stroke)
-        if keyWord == unicode('三階', 'utf-8'):
-          servo.servo3(stroke)
-        if keyWord == unicode('四階', 'utf-8'):
-          servo.servo4(stroke)
-        if keyWord == unicode('五階', 'utf-8'):
-          servo.servo5(stroke)
-        servo.moveCenter()
-        # 本来は発話中にJuliusを一時停止すべきですが、このプログラムでは簡易的にウェイトだけで処理しています。
-        for var in range (0,2):  # 音声合成音を入力してしまわないように受信データを２秒弱の間無視する
-          sleep (muteTime)
-            # 0.8秒のwaitを２回ループ入れてみたところ丁度よかったが、環境によっては調整が必要と思われる。
-          data = client.recv(bufferSize)
+        for whypo in root.findall("./SHYPO/WHYPO"):
+          keyWord = whypo.get("WORD")
+        if keyWord != unicode("不一致", 'utf-8'):
+          replyMessage(keyWord)
+      except:
+        print "error"
       data = ""  # 認識終了したのでデータをリセットする
     else:
       data = data + client.recv(bufferSize)  # Juliusサーバーから受信

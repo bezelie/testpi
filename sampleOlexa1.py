@@ -23,13 +23,14 @@ pid = p.stdout.read()  # 終了時にJuliusのプロセスをkillするためプ
 print "Julius's Process ID =" +pid
 
 # Juliusサーバーにアクセスするため自分のIPアドレスを取得する 
-getIP = subprocess.Popen(["hostname -I | awk -F' ' '{print $1}'"], stdout=subprocess.PIPE, shell=True)
-myIP = getIP.stdout.read()
-print "My IP is " +myIP
+# getIP = subprocess.Popen(["hostname -I | awk -F' ' '{print $1}'"], stdout=subprocess.PIPE, shell=True)
+# myIP = getIP.stdout.read()
+# print "My IP is " +myIP
 
 # TCPクライアントを作成しJuliusサーバーに接続する
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # clientオブジェクト生成
-client.connect((myIP, 10500))  # Juliusサーバーに接続
+# client.connect((myIP, 10500))  # Juliusサーバーに接続
+client.connect(('localhost', 10500))  # localhostでも通るぽい
 
 # Functions
 def replyMessage(keyWord):
@@ -65,6 +66,7 @@ def replyMessage(keyWord):
 # Get Started
 bezelie.initPCA9685()
 bezelie.moveCenter()
+subprocess.call('sudo amixer -q sset Mic 62', shell=True)  # マイクを再びオンにする
 
 # Main Loop
 try:
@@ -76,7 +78,7 @@ try:
         # fromstringはXML文字列からコンテナオブジェクトであるElement型に直接取り込む
       for whypo in root.findall("./SHYPO/WHYPO"):
         keyWord = whypo.get("WORD")
-        replyMessage(keyWord)
+      replyMessage(keyWord)
       data = ""  # 認識終了したのでデータをリセットする
     else:
       data = data + client.recv(bufferSize)  # Juliusサーバーから受信
