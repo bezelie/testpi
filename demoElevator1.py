@@ -13,7 +13,7 @@ csvFile = "demoElevator.csv"  # 対話リスト
 
 # Variables
 stroke = 10  # エレベータのボタンを押すためにサーボを回転させる角度
-# muteTime = 1  # 音声入力を無視する時間
+muteTime = 1  # 音声入力を無視する時間
 bufferSize = 1024  # 受信するデータの最大バイト数。できるだけ小さな２の倍数が望ましい。
 
 # Juliusをサーバモジュールモードで起動＝音声認識サーバーにする
@@ -61,7 +61,9 @@ def replyMessage(keyWord):
       servo.servo4(stroke)
     if keyWord == unicode('五階', 'utf-8'):
       servo.servo5(stroke)
+    sleep (0.1)
     servo.moveCenter()
+    sleep (muteTime)
     subprocess.call('sudo amixer -q sset Mic 62', shell=True)  #
 
 # Get Started

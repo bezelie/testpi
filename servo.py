@@ -100,10 +100,15 @@ def servo5 (degree, speed=1):
   servo5Now = moveServo (5, degree, servo5Adj, max, min, speed, servo5Now)
 
 def moveCenter ():
+#  servo1 (-10)
   servo1 (servo1Adj)
+#  servo2 (-10)
   servo2 (servo2Adj)
+#  servo3 (-10)
   servo3 (servo3Adj)
+#  servo4 (-10)
   servo4 (servo4Adj)
+#  servo5 (-10)
   servo5 (servo5Adj)
 
 # Centering Servo Motors
