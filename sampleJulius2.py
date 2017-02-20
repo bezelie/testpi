@@ -70,7 +70,7 @@ def replyMessage(keyWord):
 # Get Started
 bezelie.initPCA9685()
 bezelie.moveCenter()
-subprocess.call('sudo amixer -q sset Mic 62', shell=True)  # マイク感度の設定。62が最大値。
+subprocess.call('sudo amixer -q sset Mic 50', shell=True)  # マイク感度の設定。62が最大値。
 
 # Main Loop
 try:
