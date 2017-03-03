@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Bezelie demo Code for Raspberry Pi : Voice Recognition
+# Bezelie demo Code for Raspberry Pi : NTT Docomo Dialogue API
 
 from time import sleep
 import socket  # ソケット通信モジュール
@@ -15,9 +15,11 @@ API_KEY = '7445504c6f574d48614734364341597563366449735879762e6c396e42356f74792e4
 url_key = API_URL + API_KEY
 
 # variables
-message = "おやすみなさい"
-context = ""
-payloadDic = {
+bufferSize = 1024  # 受信するデータの最大バイト数。できるだけ小さな２の倍数が望ましい。
+
+# functions
+def postAPI(message):
+  payloadDic = {
     "utt": message,
     "context": context,
     "nickname": "光",
@@ -31,18 +33,13 @@ payloadDic = {
     "constellations": "双子座",
     "place": "東京",
     "mode": "dialog"
-}
-bufferSize = 1024  # 受信するデータの最大バイト数。できるだけ小さな２の倍数が望ましい。
-
-# functions
-def postAPI
-payloadStr = json.dumps(payloadDic)
-responseClass = requests.post(url_key, data=payloadStr)
-responseDic = responseClass.json()
-responseStr = responseDic['utt'].encode('utf-8')
-print responseStr
-subprocess.call('/home/pi/bezelie/testpi/openJTalk.sh '+ responseStr, shell=True)
-
+  }
+  payloadStr = json.dumps(payloadDic)
+  responseClass = requests.post(url_key, data=payloadStr)
+  responseDic = responseClass.json()
+  responseStr = responseDic['utt'].encode('utf-8')
+  print responseStr
+  return responseStr
 
 # Juliusをサーバモジュールモードで起動＝音声認識サーバーにする
 print "Pleas Wait For A While"  # サーバーが起動するまで時間がかかるので待つ
@@ -70,8 +67,10 @@ try:
           keyWord = whypo.get("WORD")
         print "You might speak..."+keyWord
         subprocess.call('sudo amixer -q sset Mic 0', shell=True)  # 自分の声を取り込まないようにマイクをオフにする
-        subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+ keyWord +'" | aplay -q', shell=True)
-        subprocess.call('sudo amixer -q sset Mic 62', shell=True)  #
+#        subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+ keyWord +'" | aplay -q', shell=True)
+        response = postAPI(keyWord)
+        subprocess.call('/home/pi/bezelie/testpi/openJTalk.sh '+ response, shell=True)
+        subprocess.call('sudo amixer -q sset Mic 62', shell=True)  # マイクの感度を元にもどす
       except:
         print "error"
       data = ""  # 認識終了したのでデータをリセットする
@@ -86,8 +85,3 @@ except KeyboardInterrupt:
   p.kill()
   subprocess.call(["kill " + pid], shell=True) # juliusのプロセスを終了
   client.close()
-
-
-
-
-
