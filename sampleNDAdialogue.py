@@ -37,8 +37,8 @@ def postAPI(message):
     "age": "16",
     "constellations": "双子座",
     "place": "東京",
-#    "mode": "dialog",  # 通常雑談
-    "mode": "srtr",  # しりとり
+    "mode": "dialog",  # 通常雑談
+#    "mode": "srtr",  # しりとり
     # 会話(しりとり)を継続する場合は、レスポンスボディのmodeの値を指定する
     "t": ""  # 無指定：デフォルトキャラ, 20 : 関西弁キャラ, 30 : 赤ちゃんキャラ
   }
