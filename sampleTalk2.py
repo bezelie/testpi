@@ -55,6 +55,7 @@ def talkMessage(trigger):
   print data[ansNum][2]
   bezelie.moveHead (20)
   subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+ data[ansNum][2] +'" | aplay', shell=True)
+#  subprocess.call('bash /home/pi/bezelie/testpi/openJTalk.sh '+ data[ansNum][2], shell=True)
   sleep(0.5)
   bezelie.moveHead (0, 2)
 
