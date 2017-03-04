@@ -15,26 +15,20 @@ csvFile = "bezeDialog.csv"  # 対話リスト
 # Variables
 muteTime = 1  # 音声入力を無視する時間
 bufferSize = 1024 # 受信するデータの最大バイト数。できるだけ小さな２の倍数が望ましい。
+micSens = 90  # マイク感度（％）
 
 # Juliusをサーバモジュールモードで起動＝音声認識サーバーにする
 print "Pleas Wait For A While"  # サーバーが起動するまで時間がかかるので待つ
 p = subprocess.Popen(["sh julius.sh"], stdout=subprocess.PIPE, shell=True)
-  # subprocess.PIPEは標準ストリームに対するパイプを開くことを指定するための特別な値
 pid = p.stdout.read()  # 終了時にJuliusのプロセスをkillするためプロセスIDをとっておく 
 print "Julius's Process ID =" +pid
 
-# Juliusサーバーにアクセスするため自分のIPアドレスを取得する 
-# getIP = subprocess.Popen(["hostname -I | awk -F' ' '{print $1}'"], stdout=subprocess.PIPE, shell=True)
-# myIP = getIP.stdout.read()
-# print "My IP is " +myIP
-
 # TCPクライアントを作成しJuliusサーバーに接続する
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # clientオブジェクト生成
-# client.connect((myIP, 10500))  # Juliusサーバーに接続
 client.connect(('localhost', 10500))  # Juliusサーバーに接続
 
 # Functions
-def replyMessage(keyWord):
+def makeResponse(keyWord):
   data = []
   with open(csvFile, 'rb') as f:  # opening the datafile to read as utf_8
     for i in csv.reader(f):
@@ -57,20 +51,24 @@ def replyMessage(keyWord):
     if i[2] > maxNum:             # Whitch is the max probability.
       maxNum = i[2]               # Max probability
       ansNum = i[3]               # Index of answer
+  
+  response = data[ansNum][1]
+  print "My reply is..."+response
+  return response
 
-  # Talk
-  subprocess.call('sudo amixer -q sset Mic 0', shell=True)  #
+def speak(message):
+  subprocess.call('sudo amixer -q sset Mic 0', shell=True)  # 自分の声を拾わないようにマイクを切る
   bezelie.moveHead (20)
-  print "My reply is..."+data[ansNum][1]
-  subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+ data[ansNum ][1] +'" | aplay -q', shell=True)
+  subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+message+'" | aplay -q', shell=True)
+#  subprocess.call('bash /home/pi/bezelie/testpi/openJTalk.sh '+ message, shell=True)
   bezelie.moveHead (0, 1)
   sleep (muteTime)
-  subprocess.call('sudo amixer -q sset Mic 62', shell=True)  #
+  subprocess.call('sudo amixer -q sset Mic '+str (micSens)+'%', shell=True)  # マイクの感度を戻す
 
 # Get Started
 bezelie.initPCA9685()
 bezelie.moveCenter()
-subprocess.call('sudo amixer -q sset Mic 50', shell=True)  # マイク感度の設定。62が最大値。
+subprocess.call('sudo amixer -q sset Mic 100%', shell=True)  # マイク感度の設定。62が最大値。
 
 # Main Loop
 try:
@@ -79,13 +77,16 @@ try:
   while True:
     if "</RECOGOUT>\n." in data:  # RECOGOUTツリーの最終行を見つけたら以下の処理を行う
       try:
-        root = ET.fromstring('<?xml version="1.0"?>\n' + data[data.find("<RECOGOUT>"):].replace("\n.", ""))
+        # dataから必要部分だけ抽出し、かつエラーの原因になる文字列を削除する。
+        data = data[data.find("<RECOGOUT>"):].replace("\n.", "").replace("</s>","").replace("<s>","")
         # fromstringはXML文字列からコンテナオブジェクトであるElement型に直接取り込む
+        root = ET.fromstring('<?xml version="1.0"?>\n' + data)
+        keyWord = ""
         for whypo in root.findall("./SHYPO/WHYPO"):
-          # 認識した語に対する返答を探しランダムで返答する。
-          keyWord = whypo.get("WORD")
-        print "You might speak..."+keyWord
-        replyMessage(keyWord)
+          keyWord = keyWord + whypo.get("WORD")
+        print "You might said..."+keyWord
+        response = makeResponse(keyWord)
+        speak(response)
       except:
         print "error"
       data = ""  # 認識終了したのでデータをリセットする
