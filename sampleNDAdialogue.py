@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET  # XMLエレメンタルツリー変換モジ
 import json
 import requests
 import subprocess
+import bezelie
 
 # constants
 API_URL = 'https://api.apigw.smt.docomo.ne.jp/dialogue/v1/dialogue?APIKEY='  # NTTdocomo雑談対話APIのリクエストURL
@@ -17,7 +18,9 @@ API_KEY = '7445504c6f574d48614734364341597563366449735879762e6c396e42356f74792e4
 url_key = API_URL + API_KEY
 
 # variables
-bufferSize = 1024  # 受信するデータの最大バイト数。２の倍数が望ましい。
+muteTime = 1  # 音声入力を無視する時間
+bufferSize = 1024 # 受信するデータの最大バイト数。できるだけ小さな２の倍数が望まし$
+micSens = 90  # マイク感度（％）
 
 # functions
 def postAPI(message):
@@ -34,7 +37,8 @@ def postAPI(message):
     "age": "16",
     "constellations": "双子座",
     "place": "東京",
-    "mode": "dialog",  # dialog＝通常雑談, srtr＝しりとり
+#    "mode": "dialog",  # 通常雑談
+    "mode": "srtr",  # しりとり
     # 会話(しりとり)を継続する場合は、レスポンスボディのmodeの値を指定する
     "t": ""  # 無指定：デフォルトキャラ, 20 : 関西弁キャラ, 30 : 赤ちゃんキャラ
   }
@@ -42,10 +46,21 @@ def postAPI(message):
   responseClass = requests.post(url_key, data=payloadStr)  # APIにPOST
   responseDic = responseClass.json()  # APIからのレスポンスを辞書にデコードする
   responseStr = responseDic['utt'].encode('utf-8')  # 辞書からキー「utt」の値を抜き出し、utf-8でエンコードする
+#  mode = responseDic['mode'].encode('utf-8')  # mode
+#  context = responseDic['context'].encode('utf-8')  # context
   print "The answer is..."+responseStr
   return responseStr
 
-# 参考レスポンスのサンプル
+def speak(message):
+  subprocess.call('sudo amixer -q sset Mic 0', shell=True)  # 自分の声を拾わないようにマイクを切る
+  bezelie.moveHead (20)
+  subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+message+'" | aplay -q', shell=True)
+#  subprocess.call('bash /home/pi/bezelie/testpi/openJTalk.sh '+ message, shell=True)
+  bezelie.moveHead (0, 1)
+  sleep (muteTime)  # しゃべり終えるまでちょっと待つ
+  subprocess.call('sudo amixer -q sset Mic '+str (micSens)+'%', shell=True)  # マイクの感度を戻す
+
+# 参考：レスポンスのサンプル
 # {
 #  "utt":"こんにちは光さん",
 #  "yomi":"こんにちはヒカリさん",
@@ -56,7 +71,7 @@ def postAPI(message):
 
 # Juliusをサーバモジュールモードで起動＝音声認識サーバーにする
 print "Pleas Wait For A While"  # サーバーが起動するまで時間がかかるので待つ
-p = subprocess.Popen(["sh /home/pi/bezelie/pi/juliusNL.sh"], stdout=subprocess.PIPE, shell=True)
+p = subprocess.Popen(["bash /home/pi/bezelie/pi/juliusNL.sh"], stdout=subprocess.PIPE, shell=True)
 pid = p.stdout.read()  # 終了時にJuliusのプロセスをkillするためプロセスIDをとっておく 
 print "Julius's Process ID =" +pid
 
@@ -65,7 +80,8 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # clientオブジェ
 client.connect(('localhost', 10500))  # Juliusサーバーに接続。portはデフォルトが10500。
 
 # Get Started
-subprocess.call('sudo amixer -q sset Mic 50', shell=True)  # マイク感度を設定
+bezelie.moveCenter()
+subprocess.call('sudo amixer -q sset Mic 100%', shell=True)  # マイク感度の設定。62が最大値。
 
 # Main Loop
 try:
@@ -75,25 +91,21 @@ try:
     if "</RECOGOUT>\n." in data:  # RECOGOUTツリーの最終行を見つけたら以下の処理を行う
       try:
         # dataから必要部分だけ抽出し、かつエラーの原因になる文字列を削除する。
-        data = data[data.find("<RECOGOUT>"):].replace("\n.", "").replace("</s>","").replace("<s>","")
+        data = data[data.find("<RECOGOUT>"):].replace("\n.", "").replace("</s>","").replace("<s>","").replace("。","")
         # fromstringはXML文字列からコンテナオブジェクトであるElement型に直接取り込む
         root = ET.fromstring('<?xml version="1.0"?>\n' + data)
         keyWord = ""
         for whypo in root.findall("./SHYPO/WHYPO"):
           keyWord = keyWord + whypo.get("WORD")
         print "You might said..."+keyWord
-        subprocess.call('sudo amixer -q sset Mic 0', shell=True)  # 自分の声を取り込まないようにマイクをオフにする
         response = postAPI(keyWord)
-        subprocess.call('/home/pi/bezelie/testpi/openJTalk.sh '+ response, shell=True)
-#        subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+ response +'" | aplay -q', shell=True)
-        subprocess.call('sudo amixer -q sset Mic 50', shell=True)  # マイクの感度を元にもどす
+        speak(response)
       except:
         print "error"
       data = ""  # 認識終了したのでデータをリセットする
     else:
-      response = client.recv(bufferSize)
-      data = data + response  # Juliusサーバーから受信
-        # /RECOGOUTに達するまで受信データを追加していく
+      data = data + client.recv(bufferSize)  # Juliusサーバーから受信
+      # /RECOGOUTに達するまで受信データを追加していく
 
 except KeyboardInterrupt:
   # CTRL+Cで終了
