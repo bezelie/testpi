@@ -6,9 +6,22 @@ from time import sleep
 import subprocess
 import socket  # ソケット通信モジュール
 import xml.etree.ElementTree as ET  # XMLエレメンタルツリー変換モジュール
+import bezelie
 
 # Variables
+muteTime = 1  # 音声入力を無視する時間(秒)
 bufferSize = 1024  # 受信するデータの最大バイト数。できるだけ小さな２の倍数が望ましい。
+micSens = 90  # マイク感度（％）
+
+# Functions
+def speak(message):
+  subprocess.call('sudo amixer -q sset Mic 0', shell=True)  # 自分の声を拾わないようにマイクを切る
+  bezelie.moveHead (20)
+  subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+message+'" | aplay -q', shell=True)
+#  subprocess.call('bash /home/pi/bezelie/testpi/openJTalk.sh '+ message, shell=True)
+  bezelie.moveHead (0, 1)
+  sleep (muteTime)  # 話し終えるまでちょっと待つ
+  subprocess.call('sudo amixer -q sset Mic '+str (micSens)+'%', shell=True)  # マイクの感度を戻す
 
 # Juliusをサーバモジュールモードで起動＝音声認識サーバーにする
 print "Pleas Wait For A While"  # サーバーが起動するまで時間がかかるので待つ
@@ -21,7 +34,7 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # clientオブジェ
 client.connect(('localhost', 10500))  # Juliusサーバーに接続。portはデフォルトが10500。
 
 # Get Started
-subprocess.call('sudo amixer -q sset Mic 50', shell=True)  # マイク感度を設定
+subprocess.call('sudo amixer -q sset Mic 100%', shell=True)  # マイク感度を設定
 
 # 参考
 # Juliusから出力されるXML構造
@@ -45,18 +58,14 @@ try:
         keyWord = ""
         for whypo in root.findall("./SHYPO/WHYPO"):
           keyWord = keyWord + whypo.get("WORD")
-        print "You might speak..."+keyWord
-        subprocess.call('sudo amixer -q sset Mic 0', shell=True)  # 自分の声を取り込まないようにマイクをオフにする
-        subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+ keyWord +'" | aplay -q', shell=True)
-        subprocess.call('sudo amixer -q sset Mic 50', shell=True)  # マイクの感度を元に戻す
+        print "You might said..."+keyWord
+        speak(keyWord)
       except:
         print "error"
       data = ""  # 認識終了したのでデータをリセットする
     else:
-      # Juliusから出力データを受信する
-      response = client.recv(bufferSize)
-      # /RECOGOUTに達するまで受信データを追加していく
-      data = data + response
+      data = data + client.recv(bufferSize)  # Juliusサーバーから受信
+        # /RECOGOUTに達するまで受信データを追加していく
 
 except KeyboardInterrupt:
   # CTRL+Cで終了
