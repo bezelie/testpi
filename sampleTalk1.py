@@ -14,7 +14,7 @@ try:
   while (True):
     bezelie.moveHead (20)
     subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "こんにちわー" | aplay', shell=True)
-#    subprocess.call('bash /home/pi/bezelie/testpi/openJTalk.sh '+'こんにちわー', shell=True)
+#    subprocess.call('bash /home/pi/bezelie/testpi/openJTalk.sh '+'こんにちわ', shell=True)
     sleep(0.5)
     bezelie.moveHead (0, 1)
     sleep(2)

@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 
-HTSVOICE=/home/pi/bezelie/pi/mei_normal.htsvoice
+HTSVOICE=/usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice
+#HTSVOICE=/usr/share/hts-voice/mei/mei_happy.htsvoice
 DICDIRE=/var/lib/mecab/dic/open-jtalk/naist-jdic/
 VOICEDATA=/tmp/voice.wav
-echo "$1" | open_jtalk \
+sudo echo "$1" | open_jtalk \
 -x $DICDIRE \
 -m $HTSVOICE \
 -ow $VOICEDATA \
@@ -19,4 +20,4 @@ echo "$1" | open_jtalk \
 -z 0.0 \
 
 aplay -q $VOICEDATA
-rm -f $VOICEDATA
+sudo rm -f $VOICEDATA

@@ -1,0 +1,29 @@
+<p><%= message %></p>
+<hr>
+<form id="form">
+<table>
+    <tr><td>起動時間</td><td><input type="text" name="timeAwake"></td></tr>
+    <tr><td>終了時間</td><td><input type="text" name="timeSleep"></td></tr>
+    <tr><td></td><td><input type="submit" value="この設定でプログラムを起動する"></td></tr>
+</table>
+</form>
+<p><a href="/">トップページに戻る</a></p>
+<script>
+document.getElementById('form').onsubmit = function(){
+    var timeAwake = document.getElementById('form').timeAwake.value;
+    var timeSleep = document.getElementById('form').timeSleep.value;
+    // var fs = require('fs');
+    var data = timeAwake+timeSleep;
+    fs.writeFile('writetest.txt', data , function (err) {
+        console.log(err);
+    });
+    var COMMAND = 'sudo sh /home/pi/bezelie/testpi/connectingWifi.sh';
+    exec(COMMAND, function(error, stdout, stderr) {
+        // シェル上でコマンドを実行できなかった場合のエラー処理
+        if (error !== null) {
+            console.log('exec error: ' + error);
+            return;
+        }
+    }); // end of exec
+};
+</script>
