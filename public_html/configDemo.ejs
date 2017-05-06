@@ -1,30 +1,39 @@
 <p><%= message %></p>
 <hr>
-<form id="form">
-<table>
-    <tr><td>起動時間</td><td><input type="text" name="timeAwake"></td></tr>
-    <tr><td>終了時間</td><td><input type="text" name="timeSleep"></td></tr>
-    <tr><td></td><td><input type="submit" value="この設定でプログラムを起動する"></td></tr>
+<form method="post" action="/execDemo" id="form">
+<p>活動時間帯
+<table border="1">
+    <tr>
+        <th rowspan=3>アラーム</th>
+        <td>ＯＮ</td><td><input type="checkbox" name="awake1Start" value=<%= awake1Start %>></td>
+    </tr>
+    <tr>
+        <td>時刻</td><td><input type="time" name="alarmTime" value=<%= alarmTime %>></td>
+    </tr>
+    <tr>
+        <td>タイプ</td><td><input type="text" name="alarmKind" value=<%= alarmKind %>></td>
+    </tr>
+
+    <tr>
+        <th rowspan=2>活動時間１</th>
+        <td>開始</td><td><input type="time" name="awake1Start" value=<%= awake1Start %>></td>
+    </tr>
+    <tr>
+        <td>終了</td><td><input type="time" name="awake1End" value=<%= awake1End %>></td>
+    </tr>
+    <tr>
+        <th rowspan=2>活動時間２</th>
+        <td>開始</td><td><input type="time" name="awake2Start" value=<%= awake2Start %>></td>
+    </tr>
+    <tr>
+        <td>終了</td><td><input type="time" name="awake2End" value=<%= awake2End %>></td>
+    </tr>
+    <tr>
+        <td colspan="3"><input type="submit" value="この設定でプログラムを起動する"></td>
+    </tr>
 </table>
 </form>
 <p><a href="/">トップページに戻る</a></p>
 <script>
-document.getElementById('form').onsubmit = function(){
-    var timeAwake = document.getElementById('form').timeAwake.value;
-    var timeSleep = document.getElementById('form').timeSleep.value;
-    // var fs = require('fs');
-    var data = timeAwake+timeSleep;
-    fs.writeFile('writetest.txt', data , function (err) {
-        console.log(err);
-    });
-    var COMMAND = 'sudo sh /home/pi/bezelie/testpi/connectingWifi.sh';
-    exec(COMMAND, function(error, stdout, stderr) {
-        // シェル上でコマンドを実行できなかった場合のエラー処理
-        if (error !== null) {
-            console.log('exec error: ' + error);
-            return;
-        }
-    }); // end of exec
-};
 </script>
 
