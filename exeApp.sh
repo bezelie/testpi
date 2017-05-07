@@ -1,3 +1,3 @@
 #!/bin/sh
 echo "Execute Application"
-python sampleTalk1.py
+// python sampleTalk1.py

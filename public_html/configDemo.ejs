@@ -1,39 +1,64 @@
+<!-- config demo -->
 <p><%= message %></p>
 <hr>
 <form method="post" action="/execDemo" id="form">
-<p>活動時間帯
+<p>アラーム、時報、雑談機能をもった家庭用ロボットです</p>
 <table border="1">
-    <tr>
-        <th rowspan=3>アラーム</th>
-        <td>ＯＮ</td><td><input type="checkbox" name="awake1Start" value=<%= awake1Start %>></td>
+    <tr align="center">
+        <th rowspan=4>アラーム</th>
+        <td>有無</td>
+        <td>
+            <input type="radio" name="alarmOn" value="true" <%= alarmOn0 %>>ON</input>
+            <input type="radio" name="alarmOn" value="false" <%= alarmOn1 %>>OFF</input>
+        </td>
     </tr>
-    <tr>
-        <td>時刻</td><td><input type="time" name="alarmTime" value=<%= alarmTime %>></td>
+    <tr align="center">
+        <td>時刻</td><td  align="right"><input type="time" min="00:00" max="12:00" step="300" name="alarmTime" value=<%= alarmTime %>></td>
     </tr>
-    <tr>
-        <td>タイプ</td><td><input type="text" name="alarmKind" value=<%= alarmKind %>></td>
+    <tr align="center">
+        <td>種類</td><td><select type="text" name="alarmKind">
+            <option <%= alarmKind0 %>>mild</option>
+            <option <%= alarmKind1 %>>hard</option>
+        </select></td>
+    </tr>
+    <tr align="center">
+        <td>音量</td><td align="right"><input type="number" size="10" name="alarmVol" min="0" max="100" step="10" value=<%= alarmVol %>></td>
     </tr>
 
-    <tr>
+    <tr align="center">
         <th rowspan=2>活動時間１</th>
-        <td>開始</td><td><input type="time" name="awake1Start" value=<%= awake1Start %>></td>
+        <td>開始</td><td align="right"><input type="time" min="00:00" max="23:30" step="600" name="awake1Start" value=<%= awake1Start %>></td>
     </tr>
-    <tr>
-        <td>終了</td><td><input type="time" name="awake1End" value=<%= awake1End %>></td>
+    <tr align="center">
+        <td>終了</td><td align="right"><input type="time" min="00:30" max="24:00" step="600" name="awake1End" value=<%= awake1End %>></td>
     </tr>
-    <tr>
+    <tr align="center">
         <th rowspan=2>活動時間２</th>
-        <td>開始</td><td><input type="time" name="awake2Start" value=<%= awake2Start %>></td>
+        <td>開始</td><td align="right"><input type="time" min="00:30" max="23:00" step="600" name="awake2Start" value=<%= awake2Start %>></td>
     </tr>
-    <tr>
-        <td>終了</td><td><input type="time" name="awake2End" value=<%= awake2End %>></td>
+    <tr align="center">
+        <td>終了</td><td align="right"><input type="time" min="00:00" max="24:00" step="600" name="awake2End" value=<%= awake2End %>></td>
     </tr>
-    <tr>
-        <td colspan="3"><input type="submit" value="この設定でプログラムを起動する"></td>
+    <tr align="center">
+        <td colspan="3"><input type="submit" value="この設定でプログラムを起動する" style="font-size:50px;"></td>
     </tr>
 </table>
 </form>
 <p><a href="/">トップページに戻る</a></p>
 <script>
+document.getElementById('form').onsubmit = function(){
+    var timeStart = document.getElementById('form').awake1Start.value;
+    var timeEnd = document.getElementById('form').awake1End.value;
+    var tS1 = Number(timeStart.replace(":",""));
+    var tE1 = Number(timeEnd.replace(":",""));
+
+    var timeStart = document.getElementById('form').awake2Start.value;
+    var timeEnd = document.getElementById('form').awake2End.value;
+    var tS2 = Number(timeStart.replace(":",""));
+    var tE2 = Number(timeEnd.replace(":",""));
+    if (tS1 >= tE1 || tS2 >= tE2){
+        window.alert('終了時間は開始時間より遅く設定してください');
+        return false;}
+}
 </script>
 

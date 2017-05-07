@@ -2,18 +2,19 @@
 #!/bin/sh
 echo "Making RaspberryPi an Access Point"
 # wlan0をアクセスポイントにする
-sudo cp ~/bezelie/testpi/config/interfaces_changed /etc/network/interfaces
+sudo cp /home/pi/bezelie/testpi/config/interfaces_changed /etc/network/interfaces
 # IPアドレス固定 wlan0に固定IPアドレスを割り振る
-sudo cp ~/bezelie/testpi/config/dhcpcd_changed.conf /etc/dhcpcd.conf
+sudo cp /home/pi/bezelie/testpi/config/dhcpcd_changed.conf /etc/dhcpcd.conf
 # サービスを再起動
-sudo service dhcpcd restart
+sudo service dhcpcd start
+# sudo service dhcpcd restart
 # Hostapdでアクセスポイント化
-sudo cp ~/bezelie/testpi/config/hostapd_changed.conf /etc/hostapd/hostapd.conf
+sudo cp /home/pi/bezelie/testpi/config/hostapd_changed.conf /etc/hostapd/hostapd.conf
 # DEAMON_CONF の指定。
-sudo cp ~/bezelie/testpi/config/hostapd_changed /etc/default/hostapd
+sudo cp /home/pi/bezelie/testpi/config/hostapd_changed /etc/default/hostapd
 # DHCPサーバ化
-sudo cp ~/bezelie/testpi/config/dhcpd_changed.conf /etc/dhcp/dhcpd.conf
-sudo cp ~/bezelie/testpi/config/isc-dhcp-server_changed /etc/default/isc-dhcp-server
+sudo cp /home/pi/bezelie/testpi/config/dhcpd_changed.conf /etc/dhcp/dhcpd.conf
+sudo cp /home/pi/bezelie/testpi/config/isc-dhcp-server_changed /etc/default/isc-dhcp-server
 # wifiリセット
 # sudo ifdown wlan0
 # sudo ifup wlan0
@@ -27,9 +28,8 @@ sudo systemctl enable wifiSetting.service
 #sudo service isc-dhcp-server restart
 # node-js起動
 #node /home/pi/bezelie/testpi/wifiSetting.js
-reboot
+# reboot
 
-<< comment
 # 再起動
 while true;do
     echo "May I reboot? (y/n)"
@@ -49,4 +49,3 @@ while true;do
             ;;
     esac
 done
-comment

@@ -1,10 +1,10 @@
 <p><%= message %></p>
 <hr>
 <form method="post" action="/confirm" id="form">
-<table>
-    <tr><td>SSID:</td><td><%=ssid%></td></tr>
-    <tr><td>パスワード:</td><td><input type="text" name="pass"></td></tr>
-    <tr><td></td><td><input type="submit" value="これで決まりだ"></td></tr>
+<table border="1">
+    <tr align="center"><td>SSID:</td><td><%=ssid%></td></tr>
+    <tr align="center"><td>パスワード:</td><td><input type="text" name="pass"></td></tr>
+    <tr align="center"><td colspan="2"><input type="submit" value="入力完了" style="font-size:100px;"></td></tr>
 </table>
 </form>
 <p><a href="/inputSSID">SSIDを選びなおす</a></p>

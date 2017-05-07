@@ -18,6 +18,7 @@ var CSV = require("comma-separated-values");
 // ejsファイルの読み込み（同期）
 var template = fs.readFileSync(__dirname + '/public_html/template.ejs', 'utf-8');
 var top = fs.readFileSync(__dirname + '/public_html/top.ejs', 'utf-8');
+var first = fs.readFileSync(__dirname + '/public_html/first.ejs', 'utf-8');
 var inputSSID = fs.readFileSync(__dirname + '/public_html/inputSSID.ejs', 'utf-8');
 var inputPASS = fs.readFileSync(__dirname + '/public_html/inputPASS.ejs', 'utf-8');
 var finish = fs.readFileSync(__dirname + '/public_html/finish.ejs', 'utf-8');
@@ -32,6 +33,10 @@ var routes = { // パスごとの表示内容を連想配列に格納
         "title":"BEZELIE",
         "message":"bezeMenuへようこそ",
         "content":top}, // テンプレート
+    "/first":{
+        "title":"BEZELIE",
+        "message":"bezeMenuへようこそ",
+        "content":first}, // テンプレート
     "/inputSSID":{
         "title":"BEZELIE",
         "message":"wifiのSSIDを選んでください",
@@ -42,29 +47,28 @@ var routes = { // パスごとの表示内容を連想配列に格納
         "content":inputPASS},
     "/finish":{
         "title":"BEZELIE",
-        "message":"WiFiを設定しました。再起動します",
+        "message":"WiFiに接続します",
         "content":finish},
     "/confirm":{
         "title":"BEZELIE",
+        "message":"このSSIDとパスワードでよろしいですか？",
         "content":confirm},
     "/configBasic":{
         "title":"BEZELIE",
         "content":configBasic},
     "/configDemo":{
-        "title":"デモちゃんの設定",
+        "title":"デモの設定",
         "content":configDemo},
     "/execDemo":{
         "title":"デモちゃんの実行",
         "message":"メッセージです",
         "content":execDemo}
 };
+global.alarmOn, global.alarmTime, global.alarmKind, global.alarmVol
+global.awake1Start ,global.awake1End, global.awake2Start, global.awake2End
+//ringOn,ringKind,chatOn,chatFreq,chatKind
 
 // 関数定義
-function rendering (res, content){
-    res.writeHead(200, {'Content-Type': 'text/html'});
-    res.write(content);
-    res.end();
-}
 function renderMessage (){
     content = ejs.render( template,
         {
@@ -76,6 +80,12 @@ function renderMessage (){
                 })});
    return content;
 }
+function rendering (res, content){
+    res.writeHead(200, {'Content-Type': 'text/html'});
+    res.write(content);
+    res.end();
+}
+
 // サーバーの起動
 // 同期処理は続く処理を止めてしまうので、必ずcreateServerする前に実行すること
 var server = http.createServer(); // httpオブジェクトを使ってサーバーのオブジェクトを作る
@@ -96,7 +106,18 @@ function doRequest(req, res){ // requestイベントが発生したら実行
     }
     // GETリクエストの場合  -------------------------------------------------------------------------------
     if (req.method === "GET"){
-        if (url_parts.pathname === "/inputSSID"){ // inputSSID --------------------------------------------
+        if (url_parts.pathname === "/"){ // first Arraival  -----------------------------------------------
+            var text = fs.readFileSync('/home/pi/bezelie/testpi/wifiConnectionSucceed.csv', 'utf8');
+            var list = new CSV(text, {header:false}).parse();
+            if (list.length > 1){
+                content = renderMessage();
+                rendering (res, content);
+                return;
+            } else {
+                var content = "<H3>最初にwifiを設定してください</H3><H5><a href='/inputSSID'>wifi設定</a></H5>"
+                rendering (res, content);
+                return;}
+        } else if (url_parts.pathname === "/inputSSID"){ // inputSSID -------------------------------------
             var COMMAND = "sudo iwlist wlan0 scan|grep ESSID|grep -oE '\".+'|grep -oE '[^\"]+'|grep -v 'x00'";
             exec(COMMAND, function(error, stdout, stderr){
                 ssidList = stdout.split(/\r\n|\r|\n/);                
@@ -107,15 +128,21 @@ function doRequest(req, res){ // requestイベントが発生したら実行
         } else if (url_parts.pathname === "/configDemo"){ // configDemo -----------------------------------
             var text = fs.readFileSync('/home/pi/bezelie/testpi/config.csv', 'utf8');
             var list = new CSV(text, {header:false}).parse();
-            global.alarmOn, global.alarmTime, global.alarmKind
-            global.awake1Start ,global.awake1End, global.awake2Start, global.awake2End
-            //ringOn,ringKind,chatOn,chatFreq,chatKind
-            console.log(list);
+            global.alarmOn0 = '', global.alarmOn1 = ''
+            global.alarmKind0 = "", global.alarmKind1 = ""
+            var checked = "checked = 'checked'";
+            var selected = "selected = 'true'";
+            console.log("read data= \n"+list);
             for (i=0;i<list.length;++i){
                 switch (list[i][0]){
-                    case 'alarmOn':alarmOn = list[i][1];break;
+                    case 'alarmOn':
+                      if (list[i][1]=='true'){alarmOn0 = checked}else{alarmOn1 = checked}
+                    break;
                     case 'alarmTime':alarmTime = list[i][1];break;
-                    case 'alarmKind':alarmKind = list[i][1];break;
+                    case 'alarmKind':
+                      if (list[i][1]=='mild'){alarmKind0 = selected}else{alarmKind1 = selected}
+                    break;
+                    case 'alarmVol':alarmVol = list[i][1];break;
                     case 'awake1Start':awake1Start = list[i][1];break;
                     case 'awake1End':awake1End = list[i][1];break;
                     case 'awake2Start':awake2Start = list[i][1];break;
@@ -127,9 +154,19 @@ function doRequest(req, res){ // requestイベントが発生したら実行
             return;
         } else {
             if (url_parts.pathname == "/finish"){ // finish ------------------------------------------------
+                // wifiアクセスポイントのSSIDとパスワードを設定ファイルに書きこむ
                 var COMMAND = 'sudo sh -c "wpa_passphrase ' + ssid +' '+ pass + ' >> /etc/wpa_supplicant/wpa_supplicant.conf"';
                 exec(COMMAND, function(error, stdout, stderr) {
                     // シェル上でコマンドを実行できなかった場合のエラー処理
+                    if (error !== null) {
+                        console.log('exec error: ' + error);
+                        return;
+                    }
+                    console.log('wpa: ' + stdout);
+                }); // end of exec
+                // wifi接続試験の実施
+                var COMMAND = 'sudo sh connectingWifi.sh';
+                exec(COMMAND, function(error, stdout, stderr) {
                     if (error !== null) {
                         console.log('exec error: ' + error);
                         return;
@@ -173,16 +210,12 @@ function doRequest(req, res){ // requestイベントが発生したら実行
             });
             req.on("end", function() {
                 var query = qs.parse(req.data);
-                alarmOn = query.alarmOn;
-                alarmTime = query.alarmTime;
-                alarmKind = query.alarmKind;
-                awake1End = query.awake1End;
-                awake2Start = query.awake2Start;
-                awake2End = query.awake2End;
-                var data = "alarmOn,"+query.alarmOn+"\n"+"alarmTime,"+query.alarmTime+"\n"+"alarmKind,"+query.alarmKind+"\n";;
-                console.log('data= '+data);
-                fs.writeFile('/home/pi/bezelie/testpi/text.txt', data , function (err) { // ファイルに書込
-                    console.log(err);
+                var data = "alarmOn,"+query.alarmOn+"\n"+"alarmTime,"+query.alarmTime+"\n"+"alarmKind,"+query.alarmKind+"\n"+"alarmVol,"+query.alarmVol+"\n"+
+                "awake1Start,"+query.awake1Start+"\n"+"awake1End,"+query.awake1End+"\n"+"awake2Start,"+query.awake2Start+"\n"+"awake2End,"+query.awake2End+"\n";
+                    
+                console.log('write data=\n'+data);
+                fs.writeFile('/home/pi/bezelie/testpi/config.csv', data , function (err) { // ファイルに書込
+//                    console.log(err);
                 });
                 content = renderMessage();
                 rendering (res, content);
