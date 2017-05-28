@@ -1,21 +1,23 @@
 // bezeMenu.js (node js)
 // ベゼリーを再起動すると自動起動する。
 // wifi設定、アプリの起動、アプリの設定が行える。
-// Updated in May 5th 2017 by Jun Toyoda.
+// Updated in May 25th 2017 by Jun Toyoda.
 // ---------------------------------------------------------------------------------
 
-// 外部オブジェクトの読み込み
-var http = require('http'); // httpオブジェクトの読み込み。いろいろ便利な命令が使える
-var fs = require('fs'); // ファイルを読み込むためファイルシステム
+// モジュールの読み込み
+var http = require('http'); // httpサーバー・クライアント
+var fs = require('fs'); // ファイルおよびファイルシステムを操作するモジュール
 var ejs = require('ejs'); // テンプレートエンジンejs
-var url = require('url'); // URLをパースするオブジェクト
+var url = require('url'); // URL文字列をパースやフォーマットするモジュール
 var qs = require('querystring'); // formから受信したクエリー文字列をオブジェクトに変換する
-var exec = require('child_process').exec; // シェルを実行するオブジェクト
+var exec = require('child_process').exec; // 子プロセスの生成と管理をするモジュール。
 // var csv = require('csv');
-var CSV = require("comma-separated-values");
+var CSV = require("comma-separated-values"); // CSVを配列変数やオブジェクトに変換する
 // var execSync = require('child_process').execSync; // シェルを同期実行するオブジェクト
+var os = require('os');
 
-// ejsファイルの読み込み（同期）
+
+// ejsファイルの読み込み
 var template = fs.readFileSync(__dirname + '/public_html/template.ejs', 'utf-8');
 var top = fs.readFileSync(__dirname + '/public_html/top.ejs', 'utf-8');
 var first = fs.readFileSync(__dirname + '/public_html/first.ejs', 'utf-8');
@@ -27,6 +29,10 @@ var configBasic = fs.readFileSync(__dirname + '/public_html/configBasic.ejs', 'u
 var configDemo = fs.readFileSync(__dirname + '/public_html/configDemo.ejs', 'utf-8');
 var execDemo = fs.readFileSync(__dirname + '/public_html/execDemo.ejs', 'utf-8');
 
+// 設定ファイルの読み込み
+var json = fs.readFileSync(__dirname + "/config.json", "utf-8");  // 同期でファイルを読む
+obj = JSON.parse(json); // JSONをオブジェクトに変換する。ejsからも読めるようにグローバルで定義する
+
 // 変数宣言
 var routes = { // パスごとの表示内容を連想配列に格納
     "/":{
@@ -34,42 +40,39 @@ var routes = { // パスごとの表示内容を連想配列に格納
         "message":"bezeMenuへようこそ",
         "content":top}, // テンプレート
     "/first":{
-        "title":"BEZELIE",
+        "title":"Bezelie Menu Top Page",
         "message":"bezeMenuへようこそ",
         "content":first}, // テンプレート
     "/inputSSID":{
-        "title":"BEZELIE",
+        "title":"アクセスポイントの選択",
         "message":"wifiのSSIDを選んでください",
         "content":inputSSID},
     "/inputPASS":{
-        "title":"BEZELIE",
+        "title":"パスワードの入力",
         "message":"パスワードを入力してください",
         "content":inputPASS},
     "/finish":{
-        "title":"BEZELIE",
+        "title":"アクセスポイントへの接続",
         "message":"WiFiに接続します",
         "content":finish},
     "/confirm":{
-        "title":"BEZELIE",
+        "title":"入力確認",
         "message":"このSSIDとパスワードでよろしいですか？",
         "content":confirm},
     "/configBasic":{
         "title":"BEZELIE",
         "content":configBasic},
     "/configDemo":{
-        "title":"デモの設定",
+        "title":"デモアプリの設定",
         "content":configDemo},
     "/execDemo":{
-        "title":"デモちゃんの実行",
-        "message":"メッセージです",
+        "title":"デモアプリ設定完了",
+        "message":"デモを起動します",
         "content":execDemo}
 };
-global.alarmOn, global.alarmTime, global.alarmKind, global.alarmVol
-global.awake1Start ,global.awake1End, global.awake2Start, global.awake2End
-//ringOn,ringKind,chatOn,chatFreq,chatKind
 
 // 関数定義
-function renderMessage (){
+function renderMessage (){ // ページに表示する内容を変数conntetに詰め込む
     content = ejs.render( template,
         {
         title: routes[url_parts.pathname].title,
@@ -80,22 +83,37 @@ function renderMessage (){
                 })});
    return content;
 }
-function rendering (res, content){
-    res.writeHead(200, {'Content-Type': 'text/html'});
+
+function rendering (res, content){ // ページにcontentを描画する
+    res.writeHead(200, {'Content-Type': 'text/html; charset=UTF-8'}); // ステイタスコードやhttpヘッダーをクライアントに送信する。
     res.write(content);
     res.end();
 }
 
-// サーバーの起動
-// 同期処理は続く処理を止めてしまうので、必ずcreateServerする前に実行すること
-var server = http.createServer(); // httpオブジェクトを使ってサーバーのオブジェクトを作る
-server.on('request', doRequest); // requestが来たら関数実行
-var port = 3000
-var host = '192.168.10.8'
-// var host = '10.0.0.1'
-server.listen(port, host) // ポート開放。サーバーを待ち受け状態にする。
-console.log ("server is listening at "+host+":"+port);
+function getLocalAddress() {
+    var ifacesObj = {}
+    ifacesObj.ipv4 = [];
+    ifacesObj.ipv6 = [];
+    var interfaces = os.networkInterfaces();
 
+    for (var dev in interfaces) {
+        interfaces[dev].forEach(function(details){
+            if (!details.internal){
+                switch(details.family){
+                    case "IPv4":
+                        ifacesObj.ipv4.push({name:dev, address:details.address});
+                    break;
+                    case "IPv6":
+                        ifacesObj.ipv6.push({name:dev, address:details.address})
+                    break;
+                }
+            }
+        });
+    }
+    return ifacesObj;
+};
+
+// リクエスト処理
 function doRequest(req, res){ // requestイベントが発生したら実行
     url_parts = url.parse(req.url); // URL情報をパース
     // 想定していないページに飛ぼうとした場合の処理
@@ -107,13 +125,16 @@ function doRequest(req, res){ // requestイベントが発生したら実行
     // GETリクエストの場合  -------------------------------------------------------------------------------
     if (req.method === "GET"){
         if (url_parts.pathname === "/"){ // first Arraival  -----------------------------------------------
-            var text = fs.readFileSync('/home/pi/bezelie/testpi/wifiConnectionSucceed.csv', 'utf8');
+            // wifi設定ができていない場合はwifi設定のページに飛ばしたいのだけど、まだよい方法がわからない。
+            // wifiConnecttionScceed.csvが空だったらwifi設定できてないとみなしているけど、このファイルに書きこむ
+            // 処理はまだできてない。
+            var text = fs.readFileSync('/home/pi/bezelie/testpi/wifiConnectionSucceed.csv', 'utf8'); // 同期で読み込み
             var list = new CSV(text, {header:false}).parse();
-            if (list.length > 1){
+            if (list.length > 1){ // wifi接続が成功したことがある場合
                 content = renderMessage();
                 rendering (res, content);
                 return;
-            } else {
+            } else { // wifi接続にいちども成功していない場合
                 var content = "<H3>最初にwifiを設定してください</H3><H5><a href='/inputSSID'>wifi設定</a></H5>"
                 rendering (res, content);
                 return;}
@@ -126,29 +147,6 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                 return;
             }); // end of exec
         } else if (url_parts.pathname === "/configDemo"){ // configDemo -----------------------------------
-            var text = fs.readFileSync('/home/pi/bezelie/testpi/config.csv', 'utf8');
-            var list = new CSV(text, {header:false}).parse();
-            global.alarmOn0 = '', global.alarmOn1 = ''
-            global.alarmKind0 = "", global.alarmKind1 = ""
-            var checked = "checked = 'checked'";
-            var selected = "selected = 'true'";
-            console.log("read data= \n"+list);
-            for (i=0;i<list.length;++i){
-                switch (list[i][0]){
-                    case 'alarmOn':
-                      if (list[i][1]=='true'){alarmOn0 = checked}else{alarmOn1 = checked}
-                    break;
-                    case 'alarmTime':alarmTime = list[i][1];break;
-                    case 'alarmKind':
-                      if (list[i][1]=='mild'){alarmKind0 = selected}else{alarmKind1 = selected}
-                    break;
-                    case 'alarmVol':alarmVol = list[i][1];break;
-                    case 'awake1Start':awake1Start = list[i][1];break;
-                    case 'awake1End':awake1End = list[i][1];break;
-                    case 'awake2Start':awake2Start = list[i][1];break;
-                    case 'awake2End':awake2End = list[i][1];break;
-                }
-            }
             content = renderMessage();
             rendering (res, content);
             return;
@@ -176,6 +174,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
             } // end of finish
             content = renderMessage();
             rendering (res, content);
+            // process.exit(); // node終了
             return;
         } // end of else
     } // end of get
@@ -183,10 +182,11 @@ function doRequest(req, res){ // requestイベントが発生したら実行
     if (req.method === 'POST') {
         if (url_parts.pathname == "/inputPASS"){ // inputPASS ---------------------------------------------
             req.data = ""; // 初期化
-            req.on("data", function(data) { // dataイベントは、ポストされたデータを受信している間に発生する
+            req.on("data", function(data) { // dataイベント発生時（＝data受信中）のイベントハンドラを登録。
+                // onメソッドはイベントに対してコールバック関数（イベントハンドラ）を登録するメソッド。
                 req.data += data; // POSTされたデータは引数で渡されるので、どんどん追加していく
             });
-            req.on("end", function() { // ポスト読み込み終了後の処理
+            req.on("end", function() { // endイベントが発生（＝data受信完了）した後のイベントハンドラを登録。
                 var query = qs.parse(req.data); // 受信したクエリー文字列をパースしてオブジェクトにまとめる
                 ssid = query.ssid
                 content = renderMessage();
@@ -209,16 +209,20 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                 req.data += data;
             });
             req.on("end", function() {
-                var query = qs.parse(req.data);
-                var data = "alarmOn,"+query.alarmOn+"\n"+"alarmTime,"+query.alarmTime+"\n"+"alarmKind,"+query.alarmKind+"\n"+"alarmVol,"+query.alarmVol+"\n"+
-                "awake1Start,"+query.awake1Start+"\n"+"awake1End,"+query.awake1End+"\n"+"awake2Start,"+query.awake2Start+"\n"+"awake2End,"+query.awake2End+"\n";
-                    
-                console.log('write data=\n'+data);
-                fs.writeFile('/home/pi/bezelie/testpi/config.csv', data , function (err) { // ファイルに書込
-//                    console.log(err);
+                obj.data1[0] = qs.parse(req.data);
+                fs.writeFile(__dirname + '/config.json', JSON.stringify(obj), function (err) {
+                    console.log(err);
                 });
                 content = renderMessage();
                 rendering (res, content);
+
+                //var data = "aaa";
+                //console.log(data);
+                //fs.writeFile(__dirname + '/exeApp1.sh', data, function (err) {
+                //    console.log(err);
+                //});
+                // var COMMAND = 'sudo sh ;
+                // exec(COMMAND, function(error, stdout, stderr) {
             });
         } else { // 該当せず -------------------------------------------------------------------------------
             var content = "NO-POST!!";
@@ -226,3 +230,20 @@ function doRequest(req, res){ // requestイベントが発生したら実行
         }
     }
 } // end of doRequest
+
+// サーバーの起動
+// 同期処理は続く処理を止めてしまうので、必ずcreateServerする前に実行すること
+var server = http.createServer(); // http.serverクラスのインスタンスを作る。戻値はhttp.server型のオブジェクト。
+server.on('request', doRequest); // serverでrequestイベントが発生した場合のコールバック関数を登録
+//var port = 8080 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
+var port = 3000 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
+// ここ自動的にIPアドレスを代入したい
+//var host = 'localhost'
+//var host = '192.168.10.5'
+var host = '10.0.0.1'
+
+var host1 = getLocalAddress().ipv4[0].address;
+console.log ("-"+host1+"-");
+
+server.listen(port, host) // listenメソッド実行。サーバーを待ち受け状態にする。
+console.log ("server is listening at "+host+":"+port);
