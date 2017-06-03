@@ -30,6 +30,7 @@ var configDemo = fs.readFileSync(__dirname + '/public_html/configDemo.ejs', 'utf
 var execDemo = fs.readFileSync(__dirname + '/public_html/execDemo.ejs', 'utf-8');
 
 // 設定ファイルの読み込み
+// config.jsonの中が空だと謎のエラーが表示されて悩むことになる。例外処理を入れたい。
 var json = fs.readFileSync(__dirname + "/config.json", "utf-8");  // 同期でファイルを読む
 obj = JSON.parse(json); // JSONをオブジェクトに変換する。ejsからも読めるようにグローバルで定義する
 
@@ -150,34 +151,35 @@ function doRequest(req, res){ // requestイベントが発生したら実行
             content = renderMessage();
             rendering (res, content);
             return;
-        } else {
-            if (url_parts.pathname == "/finish"){ // finish ------------------------------------------------
-                // wifiアクセスポイントのSSIDとパスワードを設定ファイルに書きこむ
-                var COMMAND = 'sudo sh -c "wpa_passphrase ' + ssid +' '+ pass + ' >> /etc/wpa_supplicant/wpa_supplicant.conf"';
-                exec(COMMAND, function(error, stdout, stderr) {
-                    // シェル上でコマンドを実行できなかった場合のエラー処理
-                    if (error !== null) {
-                        console.log('exec error: ' + error);
-                        return;
-                    }
-                    console.log('wpa: ' + stdout);
-                }); // end of exec
-                // wifi接続試験の実施
-                var COMMAND = 'sudo sh connectingWifi.sh';
-                exec(COMMAND, function(error, stdout, stderr) {
-                    if (error !== null) {
-                        console.log('exec error: ' + error);
-                        return;
-                    }
-                    console.log('wpa: ' + stdout);
-                }); // end of exec
-            } // end of finish
+        } else if (url_parts.pathname == "/finish"){ // finish ------------------------------------------------
+            // wifiアクセスポイントのSSIDとパスワードを設定ファイルに書きこむ
+            var COMMAND = 'sudo sh -c "wpa_passphrase ' + ssid +' '+ pass + ' >> /etc/wpa_supplicant/wpa_supplicant.conf"';
+            exec(COMMAND, function(error, stdout, stderr) {
+                if (error !== null) {
+                    console.log('exec error: ' + error);
+                    return;
+                }
+                console.log('wpa: ' + stdout);
+            }); // end of exec
             content = renderMessage();
             rendering (res, content);
-            // process.exit(); // node終了
+            // wifi接続試験の実施
+            var COMMAND = 'sudo sh connectingWifi.sh';
+            exec(COMMAND, function(error, stdout, stderr) {
+                if (error !== null) {
+                    console.log('exec error: ' + error);
+                    return;
+                    }
+                console.log('wpa: ' + stdout);
+                process.exit(); // node終了
+            }); // end of exec
             return;
-        } // end of else
-    } // end of get
+        } else {
+            content = renderMessage();
+            rendering (res, content);
+            return;
+        }// end of if
+    } // end of get request
     // POSTリクエストの場合 -------------------------------------------------------------------------------
     if (req.method === 'POST') {
         if (url_parts.pathname == "/inputPASS"){ // inputPASS ---------------------------------------------
@@ -216,34 +218,46 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                 content = renderMessage();
                 rendering (res, content);
 
-                //var data = "aaa";
-                //console.log(data);
-                //fs.writeFile(__dirname + '/exeApp1.sh', data, function (err) {
-                //    console.log(err);
-                //});
-                // var COMMAND = 'sudo sh ;
-                // exec(COMMAND, function(error, stdout, stderr) {
-            });
+                line1 = '#!/bin/bash';
+                line2a = "ps aux | grep python | grep -v grep | awk '{ ";
+                line2b = 'print "kill -9", $2 ';
+                line2c = "}' | sh";
+                line3 = 'cd /home/pi/bezelie/testpi'+'\n'+'python talkTest1.py';
+                line4 = 'exit 0';
+                var data = line1+'\n'+line2a+line2b+line2c+'\n'+line3+'\n'+line4;
+                fs.writeFile(__dirname + '/exeApp.sh', data, function (err) {
+                    console.log(err);
+                    var COMMAND = 'sh /home/pi/bezelie/testpi/exeApp.sh';
+                    exec(COMMAND, function(error, stdout, stderr) {
+                        if (error !== null) {
+                            console.log(error.message);
+                            console.log(error.code);
+                            console.log(error.signal);
+                        }
+                    });
+                }); // end of writeFile
+            }); // end of req on
         } else { // 該当せず -------------------------------------------------------------------------------
             var content = "NO-POST!!";
             rendering (res, content);
-        }
-    }
+            return;
+        } // end of if
+    } // end of POST request
 } // end of doRequest
 
 // サーバーの起動
 // 同期処理は続く処理を止めてしまうので、必ずcreateServerする前に実行すること
+console.log ("Lets get started");
 var server = http.createServer(); // http.serverクラスのインスタンスを作る。戻値はhttp.server型のオブジェクト。
 server.on('request', doRequest); // serverでrequestイベントが発生した場合のコールバック関数を登録
 //var port = 8080 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
 var port = 3000 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
-// ここ自動的にIPアドレスを代入したい
 //var host = 'localhost'
-//var host = '192.168.10.5'
 var host = '10.0.0.1'
 
-var host1 = getLocalAddress().ipv4[0].address;
-console.log ("-"+host1+"-");
+var host = getLocalAddress().ipv4[0].address;
+//console.log ("-"+host1+"-");
 
 server.listen(port, host) // listenメソッド実行。サーバーを待ち受け状態にする。
 console.log ("server is listening at "+host+":"+port);
+
