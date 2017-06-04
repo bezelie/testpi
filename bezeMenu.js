@@ -164,7 +164,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
             content = renderMessage();
             rendering (res, content);
             // wifi接続試験の実施
-            var COMMAND = 'sudo sh connectingWifi.sh';
+            var COMMAND = 'sh /home/pi/bezelie/testpi/connectingWifi.sh';
             exec(COMMAND, function(error, stdout, stderr) {
                 if (error !== null) {
                     console.log('exec error: ' + error);
@@ -248,16 +248,18 @@ function doRequest(req, res){ // requestイベントが発生したら実行
 // サーバーの起動
 // 同期処理は続く処理を止めてしまうので、必ずcreateServerする前に実行すること
 console.log ("Lets get started");
-var server = http.createServer(); // http.serverクラスのインスタンスを作る。戻値はhttp.server型のオブジェクト。
-server.on('request', doRequest); // serverでrequestイベントが発生した場合のコールバック関数を登録
+
 //var port = 8080 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
 var port = 3000 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
 //var host = 'localhost'
 var host = '10.0.0.1'
 
 var host = getLocalAddress().ipv4[0].address;
-//console.log ("-"+host1+"-");
+console.log ("-"+host+"-");
+// var host = '192.168.10.2'
 
+var server = http.createServer(); // http.serverクラスのインスタンスを作る。戻値はhttp.server型のオブジェクト。
+server.on('request', doRequest); // serverでrequestイベントが発生した場合のコールバック関数を登録
 server.listen(port, host) // listenメソッド実行。サーバーを待ち受け状態にする。
 console.log ("server is listening at "+host+":"+port);
 

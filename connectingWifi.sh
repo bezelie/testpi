@@ -1,5 +1,5 @@
 # ラズパイのアクセスポイント化を解除し、wifiに接続する
-#!/bin/sh
+#!/bin/bash
 echo "Connecting to WiFi..."
 # サービス終了
 sudo service isc-dhcp-server stop
@@ -19,5 +19,42 @@ sudo cp /home/pi/bezelie/testpi/config/interfaces_original /etc/network/interfac
 # wifiリセット
 sudo ifdown wlan0
 sudo ifup wlan0
-sudo sh /home/pi/bezelie/testpi/checkingWifi.sh
-#reboot
+cd /home/pi/bezelie/testpi
+# MSG=`./checkingWifi.sh`
+# echo $MSG
+# reboot
+# exit 0
+
+MSG=`./openJTalk.sh "無線ランの接続をチェックします"`
+echo $MSG
+sleep 3
+
+i=0
+while :
+do
+  sleep 3
+#  a=`hostname -I | grep -o -E '^[0-9\.]+'`
+  a=`hostname -I | grep -o -E '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'`
+  if [ -n "$a" ]; then
+    echo "WiWi Connection Succeed"
+    echo $a
+    MSG=`./openJTalk.sh "$a"`
+    echo $MSG
+    sleep 3
+    MSG=`node bezeMenu.js`
+    echo $MSG
+    break
+  fi
+  echo "WiFi Checking "$i
+  i=`expr $i + 1`
+  if [ $i -gt 10 ]; then
+    echo "missed"
+    MSG=`./openJTalk.sh "無線ランに接続できなかったのでリブートします"`
+    echo $MSG
+#    /home/pi/aquestalkpi/AquesTalkPi "無線ランに接続できなかったのでリブートします" | aplay
+    MSG=`./hostingWifi.sh`
+    echo $MSG
+    break
+    fi
+  done
+  exit 0

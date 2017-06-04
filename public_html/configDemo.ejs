@@ -1,4 +1,12 @@
 <!-- config demo -->
+<%
+var alarmOn0 = '', alarmOn1 = '', alarmKind0 = '', alarmKind1 = ''
+var checked = "checked = 'checked'";
+var selected = "selected = 'true'";
+if (obj.data1[0].alarmOn == 'true'){alarmOn0 = checked}else{alarmOn1 = checked}
+if (obj.data1[0].alarmKind == 'mild'){alarmKind0 = selected}else{alarmKind1 = selected}
+%>
+
 <p><%= message %></p>
 <hr>
 <form method="post" action="/execDemo" id="form">
@@ -13,7 +21,8 @@
         </td>
     </tr>
     <tr align="center">
-        <td>時刻</td><td  align="right"><input type="time" min="00:00" max="12:00" step="300" name="alarmTime" value=<%= alarmTime %>></td>
+        <td>時刻</td><td  align="right"><input type="time" min="00:00" max="12:00" step="300" name="alarmTime" 
+        value=<%= obj.data1[0].alarmTime %>></td>
     </tr>
     <tr align="center">
         <td>種類</td><td><select type="text" name="alarmKind">
@@ -22,31 +31,37 @@
         </select></td>
     </tr>
     <tr align="center">
-        <td>音量</td><td align="right"><input type="number" size="10" name="alarmVol" min="0" max="100" step="10" value=<%= alarmVol %>></td>
+        <td>音量</td><td align="right"><input type="number" size="10" name="alarmVol" min="0" max="100" step="10" 
+        value=<%= obj.data1[0].alarmVol %>></td>
     </tr>
 
     <tr align="center">
         <th rowspan=2>活動時間１</th>
-        <td>開始</td><td align="right"><input type="time" min="00:00" max="23:30" step="600" name="awake1Start" value=<%= awake1Start %>></td>
+        <td>開始</td><td align="right"><input type="time" min="00:00" max="23:30" step="600" name="awake1Start" 
+        value=<%= obj.data1[0].awake1Start %>></td>
     </tr>
     <tr align="center">
-        <td>終了</td><td align="right"><input type="time" min="00:30" max="24:00" step="600" name="awake1End" value=<%= awake1End %>></td>
+        <td>終了</td><td align="right"><input type="time" min="00:30" max="24:00" step="600" name="awake1End" 
+        value=<%= obj.data1[0].awake1End %>></td>
     </tr>
     <tr align="center">
         <th rowspan=2>活動時間２</th>
-        <td>開始</td><td align="right"><input type="time" min="00:30" max="23:00" step="600" name="awake2Start" value=<%= awake2Start %>></td>
+        <td>開始</td><td align="right"><input type="time" min="00:30" max="23:00" step="600" name="awake2Start" 
+        value=<%= obj.data1[0].awake2Start %>></td>
     </tr>
     <tr align="center">
-        <td>終了</td><td align="right"><input type="time" min="00:00" max="24:00" step="600" name="awake2End" value=<%= awake2End %>></td>
+        <td>終了</td><td align="right"><input type="time" min="00:00" max="24:00" step="600" name="awake2End" 
+        value=<%= obj.data1[0].awake2End %>></td>
     </tr>
     <tr align="center">
-        <td colspan="3"><input type="submit" value="この設定でプログラムを起動する" style="font-size:50px;"></td>
+        <td colspan="3"><input type="submit" value="この設定でプログラムを起動する" style="font-size:16px;"></td>
     </tr>
 </table>
 </form>
 <p><a href="/">トップページに戻る</a></p>
 <script>
 document.getElementById('form').onsubmit = function(){
+
     var timeStart = document.getElementById('form').awake1Start.value;
     var timeEnd = document.getElementById('form').awake1End.value;
     var tS1 = Number(timeStart.replace(":",""));
