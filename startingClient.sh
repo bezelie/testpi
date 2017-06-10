@@ -1,6 +1,8 @@
 #!/bin/sh
+SCRIPT_DIR=`dirname $0`
+cd $SCRIPT_DIR
 echo "checking WiFi..."
-MSG=`sh /home/pi/bezelie/testpi/openJTalk.sh "無線ランの接続をチェックします"`
+MSG=`sh openJTalk.sh "無線ランの接続をチェックします"`
 echo $MSG
 sleep 3
 
@@ -13,10 +15,10 @@ do
   if [ -n "$a" ]; then
     echo "WiWi Connection Succeed"
     echo $a
-    MSG=`sh /home/pi/bezelie/testpi/openJTalk.sh "$a"`
+    MSG=`sh openJTalk.sh "$a"`
     echo $MSG
     sleep 3
-    MSG=`node /home/pi/bezelie/testpi/bezeMenu.js`
+    MSG=`node bezeMenu.js`
     echo $MSG
     break
   fi
@@ -24,10 +26,10 @@ do
   i=`expr $i + 1`
   if [ $i -gt 10 ]; then
     echo "missed"
-    MSG=`sh /home/pi/bezelie/testpi/openJTalk.sh "無線ランに接続できなかったのでリブートします"`
+    MSG=`sh openJTalk.sh "無線ランに接続できなかったのでリブートします"`
     echo $MSG
 #    /home/pi/aquestalkpi/AquesTalkPi "無線ランに接続できなかったのでリブートします" | aplay
-    MSG=`sh /home/pi/bezelie/testpi/settingHost.sh`
+    MSG=`sh settingHost.sh`
     echo $MSG
     break
     fi

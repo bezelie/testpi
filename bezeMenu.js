@@ -1,7 +1,7 @@
 // bezeMenu.js (node js)
-// ベゼリーを再起動すると自動起動する。
-// wifi設定、アプリの起動、アプリの設定が行える。
-// Updated in May 25th 2017 by Jun Toyoda.
+// ベゼリーのメニュー。
+// アプリの起動、アプリの設定が行える。
+// Updated in Jun 10th 2017 by Jun Toyoda.
 // ---------------------------------------------------------------------------------
 
 // モジュールの読み込み
@@ -11,20 +11,12 @@ var ejs = require('ejs'); // テンプレートエンジンejs
 var url = require('url'); // URL文字列をパースやフォーマットするモジュール
 var qs = require('querystring'); // formから受信したクエリー文字列をオブジェクトに変換する
 var exec = require('child_process').exec; // 子プロセスの生成と管理をするモジュール。
-// var csv = require('csv');
-var CSV = require("comma-separated-values"); // CSVを配列変数やオブジェクトに変換する
-// var execSync = require('child_process').execSync; // シェルを同期実行するオブジェクト
 var os = require('os');
-
 
 // ejsファイルの読み込み
 var template = fs.readFileSync(__dirname + '/public_html/template.ejs', 'utf-8');
 var top = fs.readFileSync(__dirname + '/public_html/top.ejs', 'utf-8');
-var first = fs.readFileSync(__dirname + '/public_html/first.ejs', 'utf-8');
 var toHost = fs.readFileSync(__dirname + '/public_html/toHost.ejs', 'utf-8');
-var inputPASS = fs.readFileSync(__dirname + '/public_html/inputPASS.ejs', 'utf-8');
-var finish = fs.readFileSync(__dirname + '/public_html/finish.ejs', 'utf-8');
-var confirm = fs.readFileSync(__dirname + '/public_html/confirm.ejs', 'utf-8');
 var configBasic = fs.readFileSync(__dirname + '/public_html/configBasic.ejs', 'utf-8');
 var configDemo = fs.readFileSync(__dirname + '/public_html/configDemo.ejs', 'utf-8');
 var execDemo = fs.readFileSync(__dirname + '/public_html/execDemo.ejs', 'utf-8');
@@ -40,26 +32,10 @@ var routes = { // パスごとの表示内容を連想配列に格納
         "title":"BEZELIE",
         "message":"bezeMenuへようこそ",
         "content":top}, // テンプレート
-    "/first":{
-        "title":"Bezelie Menu Top Page",
-        "message":"bezeMenuへようこそ",
-        "content":first}, // テンプレート
     "/toHost":{
-        "title":"wifi setting",
-        "message":"rebootig",
+        "title":"wifi設定（再起動）",
+        "message":"再起動します",
         "content":toHost},
-    "/inputPASS":{
-        "title":"パスワードの入力",
-        "message":"パスワードを入力してください",
-        "content":inputPASS},
-    "/finish":{
-        "title":"アクセスポイントへの接続",
-        "message":"WiFiに接続します",
-        "content":finish},
-    "/confirm":{
-        "title":"入力確認",
-        "message":"このSSIDとパスワードでよろしいですか？",
-        "content":confirm},
     "/configBasic":{
         "title":"BEZELIE",
         "content":configBasic},
@@ -125,24 +101,10 @@ function doRequest(req, res){ // requestイベントが発生したら実行
     }
     // GETリクエストの場合  -------------------------------------------------------------------------------
     if (req.method === "GET"){
-        if (url_parts.pathname === "/"){ // first Arraival  -----------------------------------------------
-            // wifi設定ができていない場合はwifi設定のページに飛ばしたいのだけど、まだよい方法がわからない。
-            // wifiConnecttionScceed.csvが空だったらwifi設定できてないとみなしているけど、このファイルに書きこむ
-            // 処理はまだできてない。
-            var text = fs.readFileSync('/home/pi/bezelie/testpi/wifiConnectionSucceed.csv', 'utf8'); // 同期で読み込み
-            var list = new CSV(text, {header:false}).parse();
-            if (list.length > 1){ // wifi接続が成功したことがある場合
-                content = renderMessage();
-                rendering (res, content);
-                return;
-            } else { // wifi接続にいちども成功していない場合
-                var content = "<H3>最初にwifiを設定してください</H3><H5><a href='/inputSSID'>wifi設定</a></H5>"
-                rendering (res, content);
-                return;}
-        } else if (url_parts.pathname === "/toHost"){ // to Hosting -------------------------------------
+        if (url_parts.pathname === "/toHost"){ // to Hosting -------------------------------------
             content = renderMessage();
             rendering (res, content);
-            var COMMAND = 'sh /home/pi/bezelie/testpi/settingHost.sh';
+            var COMMAND = 'sh '+__dirname+'/settingHost.sh';
             exec(COMMAND, function(error, stdout, stderr) {
                 if (error !== null) {
                     console.log(error.message);
@@ -155,29 +117,6 @@ function doRequest(req, res){ // requestイベントが発生したら実行
             content = renderMessage();
             rendering (res, content);
             return;
-        } else if (url_parts.pathname == "/finish"){ // finish ------------------------------------------------
-            // wifiアクセスポイントのSSIDとパスワードを設定ファイルに書きこむ
-            var COMMAND = 'sudo sh -c "wpa_passphrase ' + ssid +' '+ pass + ' >> /etc/wpa_supplicant/wpa_supplicant.conf"';
-            exec(COMMAND, function(error, stdout, stderr) {
-                if (error !== null) {
-                    console.log('exec error: ' + error);
-                    return;
-                }
-                console.log('wpa: ' + stdout);
-            }); // end of exec
-            content = renderMessage();
-            rendering (res, content);
-            // wifi接続試験の実施
-            var COMMAND = 'sh /home/pi/bezelie/testpi/settingWifi.sh';
-            exec(COMMAND, function(error, stdout, stderr) {
-                if (error !== null) {
-                    console.log('exec error: ' + error);
-                    return;
-                    }
-                console.log('wpa: ' + stdout);
-//                process.exit(); // node終了
-            }); // end of exec
-            return;
         } else {
             content = renderMessage();
             rendering (res, content);
@@ -186,30 +125,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
     } // end of get request
     // POSTリクエストの場合 -------------------------------------------------------------------------------
     if (req.method === 'POST') {
-        if (url_parts.pathname == "/inputPASS"){ // inputPASS ---------------------------------------------
-            req.data = ""; // 初期化
-            req.on("data", function(data) { // dataイベント発生時（＝data受信中）のイベントハンドラを登録。
-                // onメソッドはイベントに対してコールバック関数（イベントハンドラ）を登録するメソッド。
-                req.data += data; // POSTされたデータは引数で渡されるので、どんどん追加していく
-            });
-            req.on("end", function() { // endイベントが発生（＝data受信完了）した後のイベントハンドラを登録。
-                var query = qs.parse(req.data); // 受信したクエリー文字列をパースしてオブジェクトにまとめる
-                ssid = query.ssid
-                content = renderMessage();
-                rendering (res, content);
-            });
-        }else if (url_parts.pathname == "/confirm"){ // confirm -------------------------------------------
-            req.data = ""; // 初期化
-            req.on("data", function(data) { // dataイベントは、ポストされたデータを受信している間に発生する
-                req.data += data; // POSTされたデータは引数で渡されるので、どんどん追加していく
-            });
-            req.on("end", function() { // ポスト読み込み終了後の処理
-                var query = qs.parse(req.data); // 受信したクエリー文字列をパースしてオブジェクトにまとめる
-                pass = query.pass
-                content = renderMessage();
-                rendering (res, content);
-            });
-        }else if (url_parts.pathname == "/execDemo"){ // execDemo -------------------------------------------
+        if (url_parts.pathname == "/execDemo"){ // execDemo -------------------------------------------
             req.data = "";
             req.on("data", function(data) {
                 req.data += data;
@@ -222,16 +138,16 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                 content = renderMessage();
                 rendering (res, content);
 
-                line1 = '#!/bin/bash';
+                line1 = '#!/bin/sh';
                 line2a = "ps aux | grep python | grep -v grep | awk '{ ";
                 line2b = 'print "kill -9", $2 ';
                 line2c = "}' | sh";
-                line3 = 'cd /home/pi/bezelie/testpi'+'\n'+'python talkTest1.py';
+                line3 = 'cd '+__dirname+'\n'+'python talkTest1.py';
                 line4 = 'exit 0';
                 var data = line1+'\n'+line2a+line2b+line2c+'\n'+line3+'\n'+line4;
                 fs.writeFile(__dirname + '/exeApp.sh', data, function (err) {
                     console.log(err);
-                    var COMMAND = 'sh /home/pi/bezelie/testpi/exeApp.sh';
+                    var COMMAND = 'sh '+__dirname+'/exeApp.sh';
                     exec(COMMAND, function(error, stdout, stderr) {
                         if (error !== null) {
                             console.log(error.message);
@@ -253,14 +169,9 @@ function doRequest(req, res){ // requestイベントが発生したら実行
 // 同期処理は続く処理を止めてしまうので、必ずcreateServerする前に実行すること
 console.log ("Lets get started");
 
-//var port = 8080 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
 var port = 3000 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
-//var host = 'localhost'
-var host = '10.0.0.1'
-
 var host = getLocalAddress().ipv4[0].address;
 console.log ("-"+host+"-");
-// var host = '192.168.10.2'
 
 var server = http.createServer(); // http.serverクラスのインスタンスを作る。戻値はhttp.server型のオブジェクト。
 server.on('request', doRequest); // serverでrequestイベントが発生した場合のコールバック関数を登録

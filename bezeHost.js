@@ -1,7 +1,7 @@
 // bezeHost.js (node js)
 // ホスティング状態＝ラズパイがアクセスポイントになっている状態で実行される。
 // wifi設定が行える。
-// Updated in May 25th 2017 by Jun Toyoda.
+// Updated in Jun 10th 2017 by Jun Toyoda.
 // ---------------------------------------------------------------------------------
 
 // モジュールの読み込み
@@ -11,23 +11,15 @@ var ejs = require('ejs'); // テンプレートエンジンejs
 var url = require('url'); // URL文字列をパースやフォーマットするモジュール
 var qs = require('querystring'); // formから受信したクエリー文字列をオブジェクトに変換する
 var exec = require('child_process').exec; // 子プロセスの生成と管理をするモジュール。
-// var csv = require('csv');
-var CSV = require("comma-separated-values"); // CSVを配列変数やオブジェクトに変換する
-// var execSync = require('child_process').execSync; // シェルを同期実行するオブジェクト
 var os = require('os');
-
 
 // ejsファイルの読み込み
 var template = fs.readFileSync(__dirname + '/public_html/template.ejs', 'utf-8');
 var host = fs.readFileSync(__dirname + '/public_html/host.ejs', 'utf-8');
-var first = fs.readFileSync(__dirname + '/public_html/first.ejs', 'utf-8');
-// var inputSSID = fs.readFileSync(__dirname + '/public_html/inputSSID.ejs', 'utf-8');
 var inputPASS = fs.readFileSync(__dirname + '/public_html/inputPASS.ejs', 'utf-8');
 var finish = fs.readFileSync(__dirname + '/public_html/finish.ejs', 'utf-8');
 var confirm = fs.readFileSync(__dirname + '/public_html/confirm.ejs', 'utf-8');
-var configBasic = fs.readFileSync(__dirname + '/public_html/configBasic.ejs', 'utf-8');
-var configDemo = fs.readFileSync(__dirname + '/public_html/configDemo.ejs', 'utf-8');
-var execDemo = fs.readFileSync(__dirname + '/public_html/execDemo.ejs', 'utf-8');
+var toClient = fs.readFileSync(__dirname + '/public_html/toClient.ejs', 'utf-8');
 
 // 設定ファイルの読み込み
 // config.jsonの中が空だと謎のエラーが表示されて悩むことになる。例外処理を入れたい。
@@ -39,13 +31,7 @@ var routes = { // パスごとの表示内容を連想配列に格納
     "/":{
         "title":"アクセスポイントの選択",
         "message":"wifiのSSIDを選んでください",
-//        "title":"BEZELIE",
-//        "message":"bezeMenuへようこそ",
         "content":host}, // テンプレート
-    "/first":{
-        "title":"Bezelie Menu Top Page",
-        "message":"bezeMenuへようこそ",
-        "content":first}, // テンプレート
     "/inputPASS":{
         "title":"パスワードの入力",
         "message":"パスワードを入力してください",
@@ -58,16 +44,10 @@ var routes = { // パスごとの表示内容を連想配列に格納
         "title":"入力確認",
         "message":"このSSIDとパスワードでよろしいですか？",
         "content":confirm},
-    "/configBasic":{
-        "title":"BEZELIE",
-        "content":configBasic},
-    "/configDemo":{
-        "title":"デモアプリの設定",
-        "content":configDemo},
-    "/execDemo":{
-        "title":"デモアプリ設定完了",
-        "message":"デモを起動します",
-        "content":execDemo}
+    "/toClient":{
+        "title":"wifi設定中止",
+        "message":"再起動します",
+        "content":toClient}
 };
 
 // 関数定義
@@ -89,28 +69,16 @@ function rendering (res, content){ // ページにcontentを描画する
     res.end();
 }
 
-function getLocalAddress() {
-    var ifacesObj = {}
-    ifacesObj.ipv4 = [];
-    ifacesObj.ipv6 = [];
-    var interfaces = os.networkInterfaces();
-
-    for (var dev in interfaces) {
-        interfaces[dev].forEach(function(details){
-            if (!details.internal){
-                switch(details.family){
-                    case "IPv4":
-                        ifacesObj.ipv4.push({name:dev, address:details.address});
-                    break;
-                    case "IPv6":
-                        ifacesObj.ipv6.push({name:dev, address:details.address})
-                    break;
-                }
+function setClient (req, res){ // wifi設定後再起動
+    var COMMAND = 'sh '+__dirname+'/settingClient.sh';
+    exec(COMMAND, function(error, stdout, stderr) {
+        if (error !== null) {
+            console.log('exec error: ' + error);
+            return;
             }
-        });
-    }
-    return ifacesObj;
-};
+        console.log('wpa: ' + stdout);
+    }); // end of exec
+}
 
 // リクエスト処理
 function doRequest(req, res){ // requestイベントが発生したら実行
@@ -131,6 +99,11 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                 rendering (res, content);
                 return;
             }); // end of exec
+        } else if (url_parts.pathname == "/toClient"){ // toClient ------------------------------------------------
+            content = renderMessage();
+            rendering (res, content);
+            setClient (req, res);
+            return;
         } else if (url_parts.pathname == "/finish"){ // finish ------------------------------------------------
             // wifiアクセスポイントのSSIDとパスワードを設定ファイルに書きこむ
             var COMMAND = 'sudo sh -c "wpa_passphrase ' + ssid +' '+ pass + ' >> /etc/wpa_supplicant/wpa_supplicant.conf"';
@@ -143,16 +116,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
             }); // end of exec
             content = renderMessage();
             rendering (res, content);
-            // wifi接続試験の実施
-            var COMMAND = 'sudo sh /home/pi/bezelie/testpi/settingClient.sh';
-            exec(COMMAND, function(error, stdout, stderr) {
-                if (error !== null) {
-                    console.log('exec error: ' + error);
-                    return;
-                    }
-                console.log('wpa: ' + stdout);
-//                process.exit(); // node終了
-            }); // end of exec
+            setClient (req, res);
             return;
         } else {
             content = renderMessage();
@@ -197,7 +161,6 @@ function doRequest(req, res){ // requestイベントが発生したら実行
 // 同期処理は続く処理を止めてしまうので、必ずcreateServerする前に実行すること
 console.log ("Lets get started");
 
-//var port = 8080 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
 var port = 3000 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
 //var host = 'localhost'
 var host = '10.0.0.1'
@@ -206,4 +169,3 @@ var server = http.createServer(); // http.serverクラスのインスタンス�
 server.on('request', doRequest); // serverでrequestイベントが発生した場合のコールバック関数を登録
 server.listen(port, host) // listenメソッド実行。サーバーを待ち受け状態にする。
 console.log ("server is listening at "+host+":"+port);
-
