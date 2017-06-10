@@ -15,37 +15,8 @@ sudo cp /home/pi/bezelie/testpi/config/hostapd_changed /etc/default/hostapd
 # DHCPサーバ化
 sudo cp /home/pi/bezelie/testpi/config/dhcpd_changed.conf /etc/dhcp/dhcpd.conf
 sudo cp /home/pi/bezelie/testpi/config/isc-dhcp-server_changed /etc/default/isc-dhcp-server
-# wifiリセット
-# sudo ifdown wlan0
-# sudo ifup wlan0
 # dhcpサービスとnode-jsを起動するため自動起動を設定する
-# sudo systemctl disable checkWifi.service
-# sudo systemctl disable bezeMenu.service
-sudo systemctl enable wifiSetting.service
-#echo "Please Wait for 10 seconds"
-#sleep 10
-# DHCPサービスの起動
-#sudo service isc-dhcp-server restart
-# node-js起動
-#node /home/pi/bezelie/testpi/wifiSetting.js
-# reboot
-
-# 再起動
-while true;do
-    echo "May I reboot? (y/n)"
-    read answer
-    case $answer in
-        y)
-            echo "tyeped y.\n"
-            reboot
-            break
-            ;;
-        n)
-            echo "tyeped n.\n"
-            break
-            ;;
-        *)
-            echo -e "cannot understand $answer.\n"
-            ;;
-    esac
-done
+sudo systemctl disable bezeMenu.service
+sudo cp /home/pi/bezelie/testpi/bezeHost.service /etc/systemd/system/
+sudo systemctl enable bezeHost.service
+sudo reboot
