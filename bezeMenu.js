@@ -142,7 +142,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                 line2a = "ps aux | grep python | grep -v grep | awk '{ ";
                 line2b = 'print "kill -9", $2 ';
                 line2c = "}' | sh";
-                line3 = 'cd '+__dirname+'\n'+'python talkTest1.py';
+                line3 = 'cd '+__dirname+'\n'+'python testTalk1.py';
                 line4 = 'exit 0';
                 var data = line1+'\n'+line2a+line2b+line2c+'\n'+line3+'\n'+line4;
                 fs.writeFile(__dirname + '/exeApp.sh', data, function (err) {
