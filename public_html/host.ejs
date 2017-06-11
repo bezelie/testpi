@@ -1,0 +1,25 @@
+<p><%= message %></p>
+<hr>
+<form method="post" action="/inputPASS" id="form">
+<table>
+    <tr>
+    <td>
+    <select type="text" name="ssid">
+        <% for (var i=0;i < ssidList.length-1 ; i++ ) { %>
+        <option><%= ssidList[i] %></option>
+        <% } %>
+    </select></td>
+    </tr>
+    <tr><td><input type="submit" value="このアクセスポイントに接続" style="font-size:16px;"></td></tr>
+</table>
+</form>
+<p><a href="/toClient">やめる</a></p>
+<script>
+document.getElementById('form').onsubmit = function(){
+    var keyword = document.getElementById('form').ssid.value;
+    if (keyword.length < 1){
+        window.alert('アクセスポイントを選んでください');
+        return false;
+    }
+}
+</script>

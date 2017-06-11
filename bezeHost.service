@@ -1,0 +1,15 @@
+[Unit]
+Description = starting DHCP service and node-js
+After=syslog.target
+
+[Service]
+ExecStart=/home/pi/bezelie/testpi/startingHost.sh
+Restart=no
+Type=simple
+StandardOutput=syslog
+StandardError=syslog
+User=pi
+Group=pi
+
+[Install]
+WantedBy=multi-user.target

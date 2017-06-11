@@ -1,0 +1,22 @@
+<p><%= message %></p>
+<hr>
+<form method="post" action="/confirm" id="form">
+<table border="1">
+    <tr align="center"><td>SSID:</td><td><%=ssid%></td></tr>
+    <tr align="center"><td>パスワード:</td><td><input type="text" name="pass"></td></tr>
+    <tr align="center"><td colspan="2"><input type="submit" value="入力完了" style="font-size:16px;"></td></tr>
+</table>
+</form>
+<p><a href="/">SSIDを選びなおす</a></p>
+<script>
+document.getElementById('form').onsubmit = function(){
+    var keyword = document.getElementById('form').pass.value;
+    if (keyword.length < 8){
+        window.alert('パスワードは8文字以上必要です');
+        return false;
+    }else if(keyword.length > 63){
+        window.alert('パスワードは63文字以内にしてください');
+        return false;
+    }
+}
+</script>

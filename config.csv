@@ -1,0 +1,8 @@
+alarmOn,true
+alarmTime,07:30
+alarmKind,mild
+alarmVol,100
+awake1Start,08:10
+awake1End,08:20
+awake2Start,19:40
+awake2End,19:50
