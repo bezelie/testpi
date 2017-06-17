@@ -1,0 +1,23 @@
+
+<body>
+<p><%= message %></p>
+<hr>
+    <form method="post">
+    <input type="text" name ="name"> <!-- 名前入力欄 -->
+    <input type="submit" value="Post!">
+    <ul>
+        <% for (var i=0;i < posts.length; i++ ) { %>
+        <li><%= post[i] %></li>
+        <% } %>
+    </ul>
+<br>
+<p><a href="/">トップページに戻る</a></p>
+</body>
+
+<script>
+window.onload = function(){
+
+}
+
+
+</script>

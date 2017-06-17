@@ -20,6 +20,8 @@ var toHost = fs.readFileSync(__dirname + '/public_html/toHost.ejs', 'utf-8');
 var configBasic = fs.readFileSync(__dirname + '/public_html/configBasic.ejs', 'utf-8');
 var configDemo = fs.readFileSync(__dirname + '/public_html/configDemo.ejs', 'utf-8');
 var execDemo = fs.readFileSync(__dirname + '/public_html/execDemo.ejs', 'utf-8');
+var editConversation = fs.readFileSync(__dirname + '/public_html/editConversation.ejs', 'utf-8');
+var editIntent = fs.readFileSync(__dirname + '/public_html/editIntent.ejs', 'utf-8');
 
 // 設定ファイルの読み込み
 // config.jsonの中が空だと謎のエラーが表示されて悩むことになる。例外処理を入れたい。
@@ -42,6 +44,14 @@ var routes = { // パスごとの表示内容を連想配列に格納
     "/configDemo":{
         "title":"デモアプリの設定",
         "content":configDemo},
+    "/editConversation":{
+        "title":"会話設定",
+        "message":"選んでちょ",
+        "content":editConversation},
+    "/editIntent":{
+        "title":"インテント（意図）の編集",
+        "message":"インテントの追加や削除ができます",
+        "content":editIntent},
     "/execDemo":{
         "title":"デモアプリ設定完了",
         "message":"デモを起動します",
@@ -113,6 +123,19 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                 }
                 return;
             }); // end of exec
+        } else if (url_parts.pathname === "/editIntent"){ // editIntent -----------------------------------
+            posts = []; // 投稿を保持しておく配列を定義
+            content = ejs.render( template,
+            {
+                title: routes[url_parts.pathname].title,
+                content: ejs.render(
+                routes[url_parts.pathname].content,  // pathnameに応じたテンプレートを指定
+                {
+                    message: routes[url_parts.pathname].message,  // pathnameに応じたメッセージを指定
+                    posts: posts // 投稿の内容
+            })});
+            rendering (res, content);
+            return;
         } else if (url_parts.pathname === "/configDemo"){ // configDemo -----------------------------------
             content = renderMessage();
             rendering (res, content);
@@ -125,7 +148,29 @@ function doRequest(req, res){ // requestイベントが発生したら実行
     } // end of get request
     // POSTリクエストの場合 -------------------------------------------------------------------------------
     if (req.method === 'POST') {
-        if (url_parts.pathname == "/execDemo"){ // execDemo -------------------------------------------
+        if (url_parts.pathname == "/editIntent"){ // editIntent -------------------------------------------
+            req.data = "";
+            req.on("data", function(data) {
+                req.data += data;
+            });
+            req.on("end", function() {
+                var query = qs.parse(req.data); // 全受信データをパースする。
+                posts.push(query.name); // nameをpostの配列に入れる。
+                fs.writeFile(__dirname + '/intent-out.csv', JSON.stringify(posts), function (err) {
+                    console.log(err);
+                });
+                content = ejs.render( template,
+                {
+                    title: routes[url_parts.pathname].title,
+                    content: ejs.render(
+                    routes[url_parts.pathname].content,  // pathnameに応じたテンプレートを指定
+                    {
+                        message: routes[url_parts.pathname].message,  // pathnameに応じたメッセージを指定
+                        posts: posts // 投稿の内容
+                })});
+                rendering (res, content);
+            }); // end of req on
+        } else if (url_parts.pathname == "/execDemo"){ // execDemo -------------------------------------------
             req.data = "";
             req.on("data", function(data) {
                 req.data += data;
