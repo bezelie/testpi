@@ -12,6 +12,7 @@ var url = require('url'); // URL文字列をパースやフォーマットする
 var qs = require('querystring'); // formから受信したクエリー文字列をオブジェクトに変換する
 var exec = require('child_process').exec; // 子プロセスの生成と管理をするモジュール。
 var os = require('os');
+var CSV = require("comma-separated-values"); // CSVを配列変数やオブジェクトに変換する
 
 // ejsファイルの読み込み
 var template = fs.readFileSync(__dirname + '/public_html/template.ejs', 'utf-8');
@@ -57,6 +58,8 @@ var routes = { // パスごとの表示内容を連想配列に格納
         "message":"デモを起動します",
         "content":execDemo}
 };
+// グローバル変数は便利だが多用すべきではない
+global.postsLength;
 
 // 関数定義
 function renderMessage (){ // ページに表示する内容を変数conntetに詰め込む
@@ -124,7 +127,9 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                 return;
             }); // end of exec
         } else if (url_parts.pathname === "/editIntent"){ // editIntent -----------------------------------
-            posts = []; // 投稿を保持しておく配列を定義
+            var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
+            var posts = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
+            global.length = posts.length;
             content = ejs.render( template,
             {
                 title: routes[url_parts.pathname].title,
@@ -155,10 +160,35 @@ function doRequest(req, res){ // requestイベントが発生したら実行
             });
             req.on("end", function() {
                 var query = qs.parse(req.data); // 全受信データをパースする。
-                posts.push(query.name); // nameをpostの配列に入れる。
-                fs.writeFile(__dirname + '/intent-out.csv', JSON.stringify(posts), function (err) {
+                var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
+                posts = new CSV(text, {header:false}).parse(); //  TEXTをCSVを仲介してリスト変数に変換する
+                postsLength = posts.length; // ejsに受け渡すためグローバル変数を利用
+
+                if (query.newItem){ // addItem
+                    var flag = true;
+                    for (var i=0;i < posts.length; i++ ) {
+                        if (posts[i][1] == query.newItem){
+                            console.log ('It has existed');
+                            flag = false;
+                        }
+                    }
+                    if (flag == true){ 
+                        text = text+'common,'+query.newItem+'\n';
+                        posts.push(['common',query.newItem]); // newItemをpostの配列に入れる。
+                    }
+                }else{ // delItem
+                    text = '';
+                    for (var i=0;i < posts.length; i++ ) {
+                        if (i != query.delNum){
+                            text = text+posts[i]+'\n';
+                        }
+                    }
+                    posts.splice(query.delNum, 1);
+                }
+                fs.writeFileSync(__dirname + '/chatIntent.csv', text , 'utf8', function (err) { // ファイルに書込
                     console.log(err);
                 });
+
                 content = ejs.render( template,
                 {
                     title: routes[url_parts.pathname].title,

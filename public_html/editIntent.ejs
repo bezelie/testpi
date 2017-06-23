@@ -1,13 +1,25 @@
+<!-- config demo -->
+<%
+%>
 
 <body>
 <p><%= message %></p>
 <hr>
-    <form method="post">
-    <input type="text" name ="name"> <!-- 名前入力欄 -->
-    <input type="submit" value="Post!">
+<form method="post" action="/editIntent" id="addItem">
+<table border="1">
+    <tr align="center"><td>新規インテント</td><td><input type="text" name="newItem"></td>
+    <td><input type="submit" value="追加" style="font-size:16px;"></td></tr>
+</table>
+</form>
+<form method="post" action="/editIntent" id="delItem">
+<table border="1">
+    <tr align="center"><td>削除したい番号</td><td><input type="text" name="delNum"></td>
+    <td><input type="submit" value="削除" style="font-size:16px;"></td></tr>
+</table>
+</form>
     <ul>
         <% for (var i=0;i < posts.length; i++ ) { %>
-        <li><%= post[i] %></li>
+        <li><%= i+"："+posts[i][1] %></li>
         <% } %>
     </ul>
 <br>
@@ -16,8 +28,24 @@
 
 <script>
 window.onload = function(){
-
 }
-
-
+document.getElementById('addItem').onsubmit = function(){
+    var keyword = document.getElementById('addItem').newItem.value;
+    if (keyword.length == 0){
+        window.alert('入力欄に追加したいインテントを入力してください');
+        return false;
+    }
+}
+document.getElementById('delItem').onsubmit = function(){
+    var keyword = document.getElementById('delItem').delNum.value;
+    if (keyword.length == 0){
+        window.alert('入力欄に削除したいインテントの番号を入力してください');
+        return false;
+    } else if (keyword >= postsLength){
+        window.alert('値が大きすぎます');
+        return false;
+    } else {
+        window.alert(keyword+' を削除します');
+    }
+}
 </script>
