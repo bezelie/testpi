@@ -25,6 +25,8 @@ var editConversation = fs.readFileSync(__dirname + '/public_html/editConversatio
 var editIntent = fs.readFileSync(__dirname + '/public_html/editIntent.ejs', 'utf-8');
 var selectIntent = fs.readFileSync(__dirname + '/public_html/selectIntent.ejs', 'utf-8');
 var editEntity = fs.readFileSync(__dirname + '/public_html/editEntity.ejs', 'utf-8');
+var selectIntent4d = fs.readFileSync(__dirname + '/public_html/selectIntent4d.ejs', 'utf-8');
+var editDialog = fs.readFileSync(__dirname + '/public_html/editDialog.ejs', 'utf-8');
 
 // 設定ファイルの読み込み
 // config.jsonの中が空だと謎のエラーが表示されて悩むことになる。例外処理を入れたい。
@@ -61,8 +63,16 @@ var routes = { // パスごとの表示内容を連想配列に格納
         "content":selectIntent},
     "/editEntity":{
         "title":"エンティティ（同意語）の編集",
-        "message":"エンティティの追加や削除ができます。エンティティとはインテントをロボットに伝えるための具体的な言葉のことで、ひとつのインテントに対して複数設定することができます。",
+        "message":"エンティティの追加や削除ができます。エンティティとはインテントをロボットに伝えるための具体的な言葉のことです。ひとつのインテントに対して複数設定することができます。",
         "content":editEntity},
+    "/selectIntent4d":{
+        "title":"ダイアログ（対話）の編集",
+        "message":"ダイアログを関連付けるインテントを選んでください。",
+        "content":selectIntent4d},
+    "/editDialog":{
+        "title":"ダイアログ（対話）の編集",
+        "message":"ダイアログの追加や削除ができます。ダイアログとはインテントに対するロボットの返答です。ひとつのインテントに対して複数設定した場合はランダムで選ばれます。",
+        "content":editDialog},
     "/execDemo":{
         "title":"デモアプリ設定完了",
         "message":"デモを起動します",
@@ -150,6 +160,20 @@ function doRequest(req, res){ // requestイベントが発生したら実行
             })});
             rendering (res, content);
             return;
+        } else if (url_parts.pathname === "/selectIntent4d"){ // selectIntent4d -----------------------------------
+            var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
+            var intents = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
+            content = ejs.render( template,
+            {
+                title: routes[url_parts.pathname].title,
+                content: ejs.render(
+                routes[url_parts.pathname].content,  // pathnameに応じたテンプレートを指定
+                {
+                    message: routes[url_parts.pathname].message,  // pathnameに応じたメッセージを指定
+                    intents: intents // 投稿の内容
+            })});
+            rendering (res, content);
+            return;
         } else if (url_parts.pathname === "/editIntent"){ // editIntent -----------------------------------
             var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
             var posts = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
@@ -177,7 +201,58 @@ function doRequest(req, res){ // requestイベントが発生したら実行
     } // end of get request
     // POSTリクエストの場合 -------------------------------------------------------------------------------
     if (req.method === 'POST') {
-        if (url_parts.pathname == "/editEntity"){ // editEntity -------------------------------------------
+        if (url_parts.pathname == "/editDialog"){ // editDialog -------------------------------------------
+            req.data = "";
+            req.on("data", function(data) {
+                req.data += data;
+            });
+            req.on("end", function() {
+                var query = qs.parse(req.data); // 全受信データをパースする。
+                var text = fs.readFileSync(__dirname + "/chatDialog.csv", 'utf8'); // 同期でファイルを読む
+                posts = new CSV(text, {header:false}).parse(); //  TEXTをCSVを仲介してリスト変数に変換する
+                postsLength = posts.length; // ejsに受け渡すためグローバル変数を利用
+
+                if (query.newItem){ // addItem
+                    var flag = true;
+                    for (var i=0;i < posts.length; i++ ) {
+                        if (posts [i][0] == intent && posts[i][1] == query.newItem){
+                            console.log ('It has existed');
+                            flag = false;
+                        }
+                    }
+                    if (flag == true){ 
+                        text = text+intent+','+query.newItem+'\n';
+                        posts.push([intent,query.newItem]); // newItemをpostの配列に入れる。
+                    }
+                }else if (query.intent){ // intentが設定された場合
+                    intent = query.intent; // グローバル変数intentに代入。もっといい方法ないの？
+                }else{ // delItem
+                    text = '';
+                    for (var i=0;i < posts.length; i++ ) {
+                        if (i != query.delNum){
+                            text = text+posts[i]+'\n';
+                        }
+                    }
+                    posts.splice(query.delNum, 1); // postsからもdelNum行を削除
+                }
+                fs.writeFileSync(__dirname + '/chatDialog.csv', text , 'utf8', function (err) { // ファイルに書込
+                    console.log(err);
+                });
+
+                content = ejs.render( template,
+                {
+                    title: routes[url_parts.pathname].title,
+                    content: ejs.render(
+                    routes[url_parts.pathname].content,  // pathnameに応じたテンプレートを指定
+                    {
+                        message: routes[url_parts.pathname].message,  // pathnameに応じたメッセージを指定
+                        intent: intent, // インテント
+                        posts: posts // 投稿の内容
+                })});
+//                console.log (posts);
+                rendering (res, content);
+            }); // end of req on
+        } else if (url_parts.pathname == "/editEntity"){ // editEntity -------------------------------------------
             req.data = "";
             req.on("data", function(data) {
                 req.data += data;
@@ -222,7 +297,6 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                         console.log(error.code);
                         console.log(error.signal);
                     }
-                });
 
                 var COMMAND = 'iconv -f utf8 -t eucjp chatEntity.tsv | /home/pi/dictation-kit-v4.4/src/julius-4.4.2/gramtools/yomi2voca/yomi2voca.pl > chatEntity.dic'; // tsvをdicに変換
                 exec(COMMAND, function(error, stdout, stderr) {
@@ -231,7 +305,8 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                         console.log(error.code);
                         console.log(error.signal);
                     }
-                })
+                });
+                });
 
                 content = ejs.render( template,
                 {
