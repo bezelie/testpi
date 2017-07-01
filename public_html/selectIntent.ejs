@@ -1,0 +1,26 @@
+<p><%= message %></p>
+<hr>
+<form method="post" action="/editEntity" id="form">
+<table>
+    <tr>
+    <td>
+    <select type="text" name="intent">
+        <% for (var i=0;i < intents.length ; i++ ) { %>
+        <option><%= intents[i][1] %></option>
+        <% } %>
+    </select></td>
+    </tr>
+    <tr><td><input type="submit" value="このインテントを選択" style="font-size:16px;"></td></tr>
+</table>
+</form>
+<p><a href="/editConversation">会話編集ページに戻る</a></p>
+<p><a href="/">トップページに戻る</a></p>
+<script>
+document.getElementById('form').onsubmit = function(){
+    var keyword = document.getElementById('form').intent.value;
+    if (keyword.length < 1){
+        window.alert('インテントを選んでください');
+        return false;
+    }
+}
+</script>

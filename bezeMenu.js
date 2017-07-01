@@ -20,13 +20,15 @@ var top = fs.readFileSync(__dirname + '/public_html/top.ejs', 'utf-8');
 var toHost = fs.readFileSync(__dirname + '/public_html/toHost.ejs', 'utf-8');
 var configBasic = fs.readFileSync(__dirname + '/public_html/configBasic.ejs', 'utf-8');
 var configDemo = fs.readFileSync(__dirname + '/public_html/configDemo.ejs', 'utf-8');
-var execDemo = fs.readFileSync(__dirname + '/public_html/execDemo.ejs', 'utf-8');
 var editConversation = fs.readFileSync(__dirname + '/public_html/editConversation.ejs', 'utf-8');
 var editIntent = fs.readFileSync(__dirname + '/public_html/editIntent.ejs', 'utf-8');
 var selectIntent = fs.readFileSync(__dirname + '/public_html/selectIntent.ejs', 'utf-8');
 var editEntity = fs.readFileSync(__dirname + '/public_html/editEntity.ejs', 'utf-8');
 var selectIntent4d = fs.readFileSync(__dirname + '/public_html/selectIntent4d.ejs', 'utf-8');
 var editDialog = fs.readFileSync(__dirname + '/public_html/editDialog.ejs', 'utf-8');
+var execDemo = fs.readFileSync(__dirname + '/public_html/execDemo.ejs', 'utf-8');
+var execChat = fs.readFileSync(__dirname + '/public_html/execChat.ejs', 'utf-8');
+var stopPython = fs.readFileSync(__dirname + '/public_html/stopPython.ejs', 'utf-8');
 
 // 設定ファイルの読み込み
 // config.jsonの中が空だと謎のエラーが表示されて悩むことになる。例外処理を入れたい。
@@ -73,6 +75,14 @@ var routes = { // パスごとの表示内容を連想配列に格納
         "title":"ダイアログ（対話）の編集",
         "message":"ダイアログの追加や削除ができます。ダイアログとはインテントに対するロボットの返答です。ひとつのインテントに対して複数設定した場合はランダムで選ばれます。",
         "content":editDialog},
+    "/stopPython":{
+        "title":"プログラム停止",
+        "message":"デモを停止します",
+        "content":stopPython},
+    "/execChat":{
+        "title":"チャットプログラム実行",
+        "message":"デモを起動します",
+        "content":execChat},
     "/execDemo":{
         "title":"デモアプリ設定完了",
         "message":"デモを起動します",
@@ -134,7 +144,39 @@ function doRequest(req, res){ // requestイベントが発生したら実行
     }
     // GETリクエストの場合  -------------------------------------------------------------------------------
     if (req.method === "GET"){
-        if (url_parts.pathname === "/toHost"){ // to Hosting -------------------------------------
+        if (url_parts.pathname == "/stopPython"){ // stopPython -------------------------------------------
+            content = renderMessage();
+            rendering (res, content);
+            var COMMAND = "sh stopPython.sh";
+            exec(COMMAND, function(error, stdout, stderr) {
+               if (error !== null) {
+                    console.log(error.message);
+                    console.log(error.code);
+                    console.log(error.signal);
+                } // end of if
+            console.log(COMMAND);
+            }); // end of exec
+        } else if (url_parts.pathname == "/execChat"){ // execChat -------------------------------------------
+            content = renderMessage();
+            rendering (res, content);
+                line1 = '#!/bin/sh';
+                line2a = "ps aux | grep python | grep -v grep | awk '{ ";
+                line2b = 'print "kill -9", $2 ';
+                line2c = "}' | sh";
+                line3 = 'cd '+__dirname+'\n'+'python demoChat1.py';
+                line4 = 'exit 0';
+                var data = line1+'\n'+line2a+line2b+line2c+'\n'+line3+'\n'+line4;
+                fs.writeFile(__dirname + '/exeApp.sh', data, function (err) {
+                    var COMMAND = 'sh '+__dirname+'/exeApp.sh';
+                    exec(COMMAND, function(error, stdout, stderr) {
+                        if (error !== null) {
+                            console.log(error.message);
+                            console.log(error.code);
+                            console.log(error.signal);
+                        } // end of if
+                    }); // end of exec
+                }); // end of writeFile
+        } else if (url_parts.pathname === "/toHost"){ // to Hosting -------------------------------------
             content = renderMessage();
             rendering (res, content);
             var COMMAND = 'sh '+__dirname+'/settingHost.sh';
