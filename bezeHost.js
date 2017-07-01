@@ -91,7 +91,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
     }
     // GETリクエストの場合  -------------------------------------------------------------------------------
     if (req.method === "GET"){
-        if (url_parts.pathname === "/"){ // first Arraival  -----------------------------------------------
+        if (url_parts.pathname === "/"){ // WiFiアクセスポイントを検索してssidListに代入 ------------------------
             var COMMAND = "sudo iwlist wlan0 scan|grep ESSID|grep -oE '\".+'|grep -oE '[^\"]+'|grep -v 'x00'";
             exec(COMMAND, function(error, stdout, stderr){
                 ssidList = stdout.split(/\r\n|\r|\n/);                
