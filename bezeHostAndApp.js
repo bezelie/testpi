@@ -14,6 +14,7 @@ var exec = require('child_process').exec; // 子プロセスの生成と管理�
 var os = require('os');
 var CSV = require("comma-separated-values"); // CSVを配列変数やオブジェクトに変換する
 
+
 // ejsファイルの読み込み
 var template = fs.readFileSync(__dirname + '/public_html/template.ejs', 'utf-8');
 var top = fs.readFileSync(__dirname + '/public_html/top.ejs', 'utf-8');
@@ -163,7 +164,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                     console.log(error.signal);
                 } // end of if
             }); // end of exec
-        } else if (url_parts.pathname == "/execChat"){ // execChat -------------------------------------------
+        } else if (url_parts.pathname == "/execChat"){ // execChat ----------------
             content = renderMessage();
             rendering (res, content);
                 line1 = '#!/bin/sh';
@@ -174,8 +175,9 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                 line4 = 'exit 0';
                 var data = line1+'\n'+line2a+line2b+line2c+'\n'+line3+'\n'+line4;
                 fs.writeFile(__dirname + '/exeApp.sh', data, function (err) {
-                    var COMMAND = 'sh '+__dirname+'/settingHostAndApp.sh';
-                    exec(COMMAND, function(error, stdout, stderr) {
+                    var COMMAND = 'sh '+__dirname+'/exeApp.sh';
+                    exec(COMMAND, {maxBuffer : 1024 * 1024 * 1024}, function(error, stdout, stderr) {
+                        console.log(stdout);
                         if (error !== null) {
                             console.log(error.message);
                             console.log(error.code);
@@ -461,8 +463,11 @@ function doRequest(req, res){ // requestイベントが発生したら実行
 console.log ("Lets get started");
 
 var port = 3000 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
-var host = getLocalAddress().ipv4[0].address;
-console.log ("-"+host+"-");
+// var host = getLocalAddress().ipv4[0].address;
+// console.log ("-"+host+"-");
+
+//var host = 'localhost'
+var host = '10.0.0.1'
 
 var server = http.createServer(); // http.serverクラスのインスタンスを作る。戻値はhttp.server型のオブジェクト。
 server.on('request', doRequest); // serverでrequestイベントが発生した場合のコールバック関数を登録

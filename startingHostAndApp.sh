@@ -6,6 +6,5 @@ sleep 10
 # DHCPサービスの起動
 sudo service isc-dhcp-server start
 # node-js起動
-sh exeApp.sh
-node bezeMenu.js
+node bezeHostAndApp.js
 exit 0

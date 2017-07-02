@@ -1,5 +1,5 @@
 # Julius 設定ファイル：音声キーワード認識版
--w julius.dic                                                         #単単語認識用単語辞書
+# -w julius.dic                                                         #単単語認識用単語辞書
 -v /home/pi/dictation-kit-v4.4/model/lang_m/bccwj.60k.htkdic          #単語辞書ファイル
 -h /home/pi/dictation-kit-v4.4/model/phone_m/jnas-tri-3k16-gid.binhmm #音響HMM定義ファイル
 -hlist /home/pi/dictation-kit-v4.4/model/phone_m/logicalTri           #HMMListファイル

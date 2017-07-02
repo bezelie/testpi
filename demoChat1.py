@@ -17,6 +17,7 @@ muteTime = 1  # 音声入力を無視する時間
 bufferSize = 1024 # 受信するデータの最大バイト数。できるだけ小さな２の倍数が望ましい。
 
 # Juliusをサーバモジュールモードで起動＝音声認識サーバーにする
+subprocess.call('sh openJTalk.sh "ちょっとまってて"', shell=True)
 print "Please Wait For A While"  # サーバーが起動するまで時間がかかるので待つ
 p = subprocess.Popen(["sh chat.sh"], stdout=subprocess.PIPE, shell=True)
   # subprocess.PIPEは標準ストリームに対するパイプを開くことを指定するための特別な値
@@ -25,10 +26,24 @@ print "Julius's Process ID =" +pid
 
 # TCPクライアントを作成しJuliusサーバーに接続する
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # clientオブジェクト生成
+# client.connect(('10.0.0.1', 10500))  # Juliusサーバーに接続
 client.connect(('localhost', 10500))  # Juliusサーバーに接続
 
 # Functions
+def writeFile(text):
+  f = open ('out.txt', 'r')
+  textBefore = ""
+  for row in f:
+  #  print row+"\n"
+    textBefore = textBefore + row
+  f.close()
+  f = open ('out.txt', 'w')
+  f.write(textBefore+text+"\n")
+  f.close()
+#  sleep(0.1)
+
 def replyMessage(keyWord):
+  # writeFile("reply start")
   data = []
   with open(csvFile, 'rb') as f:  # opening the datafile to read as utf_8
     for i in csv.reader(f):
@@ -55,7 +70,7 @@ def replyMessage(keyWord):
   # Talk
   subprocess.call('sudo amixer -q sset Mic 0', shell=True)  #
   # bezelie.moveHead (20)
-  print "My reply is..."+data[ansNum][1]
+  print "Bezelie..."+data[ansNum][1]
 
   subprocess.call('sh openJTalk.sh "'+data[ansNum][1]+'"', shell=True)
   # subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+ data[ansNum ][1] +'" | aplay -q', shell=True)
@@ -72,26 +87,43 @@ subprocess.call('sudo amixer -q sset Mic 50', shell=True)  # マイク感度の�
 try:
   data = ""
   print "Please Speak"
+  subprocess.call('sh openJTalk.sh "もしもし"', shell=True)
+  writeFile("start")
   while True:
     if "</RECOGOUT>\n." in data:  # RECOGOUTツリーの最終行を見つけたら以下の処理を行う
       try:
-        root = ET.fromstring('<?xml version="1.0"?>\n' + data[data.find("<RECOGOUT>"):].replace("\n.", ""))
-        # fromstringはXML文字列からコンテナオブジェクトであるElement型に直接取り込む
+        # dataから必要部分だけ抽出し、かつエラーの原因になる文字列を削除する。
+        data = data[data.find("<RECOGOUT>"):].replace("\n.", "").replace("</s>","").replace("<s>","")
+        writeFile("data setted----------------------")
+        # writeFile(data)
+        # fromstringはXML文字列からコンテナオブジェクトであるElement型に直接 $
+        root = ET.fromstring('<?xml version="1.0"?>\n' + data)
+        # root = ET.fromstring('<?xml version="1.0"?>\n' + data[data.find("<RECOGOUT>"):].replace("\n.", ""))
+        writeFile("root setted----------------------")
+        # writeFile(root)
+        keyWord = ""
         for whypo in root.findall("./SHYPO/WHYPO"):
-          # 認識した語に対する返答を探しランダムで返答する。
-          keyWord = whypo.get("WORD")
-        print "You might speak..."+keyWord
+          keyWord = keyWord + whypo.get("WORD")
+          # writeFile("."+keyWord)
+        print "You......."+keyWord
+        writeFile("lets start reply")
         replyMessage(keyWord)
+        writeFile("answerd")
       except:
-        print "error"
+        print "------------------------"
+        writeFile("except")
       data = ""  # 認識終了したのでデータをリセットする
     else:
       data = data + client.recv(bufferSize)  # Juliusサーバーから受信
+      writeFile("data added")
+
         # /RECOGOUTに達するまで受信データを追加していく
 
 except KeyboardInterrupt:
   # CTRL+Cで終了
   print "  終了しました"
+  writeFile("---------------------------")
   p.kill()
   subprocess.call(["kill " + pid], shell=True) # juliusのプロセスを終了
   client.close()
+
