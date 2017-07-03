@@ -17,6 +17,8 @@ sudo cp config/dhcpcd_original.conf /etc/dhcpcd.conf
 sudo cp config/interfaces_original /etc/network/interfaces
 # DHCPサービスとnode-jsの自動起動を解除
 sudo systemctl disable bezeHost.service
+sudo systemctl disable bezeHostAndApp.service
+sudo systemctl disable bezeApp.service
 sudo cp bezeMenu.service /etc/systemd/system/
 sudo systemctl enable bezeMenu.service
 sudo reboot
