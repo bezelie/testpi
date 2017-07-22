@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET # XMLエレメンタルツリー変換モジ�
 import bezelie
 
 csvFile = "chatDialog.csv"  # 対話リスト
+sensitivity = 30 
 
 # Variables
 muteTime = 1  # 音声入力を無視する時間
@@ -69,25 +70,29 @@ def replyMessage(keyWord):
 
   # Talk
   subprocess.call('sudo amixer -q sset Mic 0', shell=True)  #
+  bezelie.actTalk()
   # bezelie.moveHead (20)
   print "Bezelie..."+data[ansNum][1]
 
   subprocess.call('sh openJTalk.sh "'+data[ansNum][1]+'"', shell=True)
   # subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+ data[ansNum ][1] +'" | aplay -q', shell=True)
 
+  bezelie.moveCenter()
   # bezelie.moveHead (0, 1)
   sleep (muteTime)
-  subprocess.call('sudo amixer -q sset Mic 50', shell=True)  #
+  subprocess.call('sudo amixer -q sset Mic 40', shell=True)  #
 
 # Get Started
 # bezelie.moveCenter()
-subprocess.call('sudo amixer -q sset Mic 50', shell=True)  # マイク感度の設定。62が最大値。
+subprocess.call('sudo amixer -q sset Mic 40', shell=True)  # マイク感度の設定。62が最大値。
 
 # Main Loop
 try:
   data = ""
   print "Please Speak"
+  bezelie.actHappy()
   subprocess.call('sh openJTalk.sh "もしもし"', shell=True)
+  bezelie.moveCenter()
   writeFile("start")
   while True:
     if "</RECOGOUT>\n." in data:  # RECOGOUTツリーの最終行を見つけたら以下の処理を行う

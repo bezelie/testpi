@@ -50,7 +50,7 @@ def sensorCheck():
       time.sleep(0.5)
 
 # Centering All Servos
-bezelie.centering()
+bezelie.moveCenter()
 
 # Main Loop
 try:

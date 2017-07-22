@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Bezelie Face Recognition Test
 # カメラで顔を認識したら喋る
+# 以前はopenGLのエラーでていたためpygameで画像を出力しているが、
+# 現在はこの対処の必要はなく、cv2.inshowで表示してよい。
 
 import picamera
 import picamera.array
@@ -15,7 +17,7 @@ from random import randint
 
 csvFile = "bezeTalkFace.csv"
 pygame.init()
-size=(800,480)
+size=(800,440)
 screen = pygame.display.set_mode(size)
 
 def bezeTalk(distance):
@@ -53,14 +55,15 @@ cascade_path =  "/usr/share/opencv/haarcascades/haarcascade_frontalface_alt.xml"
 cascade = cv2.CascadeClassifier(cascade_path)
 
 # Get Started
-bezelie.centering()
+bezelie.initPCA9685()
+bezelie.moveCenter()
 yaw = 0
 delta = 1
 
 # Main Loop
 with picamera.PiCamera() as camera:
   with picamera.array.PiRGBArray(camera) as stream:
-    camera.resolution = (800, 480) # ディスプレイの解像度に合わせてください。
+    camera.resolution = (800, 440) # ディスプレイの解像度に合わせてください。
     camera.hflip = True            # 上下反転。不要なら削除してください。
     camera.vflip = True            # 左右反転。不要なら削除してください。
     sleep (1)
@@ -71,7 +74,7 @@ with picamera.PiCamera() as camera:
       # グレースケール画像に変換しgrayに代入
       gray = cv2.cvtColor(stream.array, cv2.COLOR_BGR2GRAY)
       # grayから顔を探す
-      facerect = cascade.detectMultiScale(gray, scaleFactor=1.8, minNeighbors=1, minSize=(200,200), maxSize=(400,400))
+      facerect = cascade.detectMultiScale(gray, scaleFactor=1.5, minNeighbors=2, minSize=(100,100), maxSize=(400,400))
       # scaleFactor 大きな値にすると速度が早くなり、精度が落ちる。1.1〜1.9ぐらい。
       # minNeighbors 小さな値にするほど顔が検出されやすくなる。通常は3〜6。
       # minSize 検出する顔の最小サイズ。解像度に合わせて修正してください。
@@ -82,18 +85,11 @@ with picamera.PiCamera() as camera:
           # rect[0:2]+rect[2:4]:長方形の右下の座標
           cv2.rectangle(stream.array, tuple(rect[0:2]),tuple(rect[0:2]+rect[2:4]), (0,255,0), thickness=4)
 
-        bezelie.movePit (-15) # 背伸びをさせる
+        bezelie.moveHead (20)
         sleep (0.2)
-        bezelie.moveRot ( 10)
-        sleep (0.2)
-        bezelie.moveRot (-10)
-        sleep (0.4)
-        bezelie.moveRot ( 0)
         bezeTalk ("long")
         #subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "こんにちわー" | aplay', shell=True)
         sleep(0.5)
-        bezelie.movePit (0, 1)
-        sleep(0.2)
 
       # pygameで画像を表示
       pygame_imshow(stream.array)
@@ -110,7 +106,7 @@ with picamera.PiCamera() as camera:
       stream.truncate()
 
       # yawサーボを回す
-      bezelie.moveYaw (yaw)
+      bezelie.moveStage (yaw)
       sleep (0.2)
       yaw = yaw + delta
       if yaw > 15 or yaw < -15:
