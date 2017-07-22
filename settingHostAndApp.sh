@@ -19,6 +19,7 @@ sudo cp config/dhcpd_changed.conf /etc/dhcp/dhcpd.conf
 sudo cp config/isc-dhcp-server_changed /etc/default/isc-dhcp-server
 # dhcpサービスとnode-jsを起動するため自動起動を設定する
 sudo systemctl disable bezeMenu.service
+sudo systemctl disable bezeHost.service
 sudo cp bezeHostAndApp.service /etc/systemd/system/
 sudo systemctl enable bezeHostAndApp.service
 sudo reboot
