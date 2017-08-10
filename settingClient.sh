@@ -19,6 +19,6 @@ sudo cp config/interfaces_original /etc/network/interfaces
 sudo systemctl disable bezeHost.service
 sudo systemctl disable bezeHostAndApp.service
 sudo systemctl disable bezeApp.service
-sudo cp bezeMenu.service /etc/systemd/system/
-sudo systemctl enable bezeMenu.service
+# sudo cp bezeMenu.service /etc/systemd/system/
+# sudo systemctl enable bezeMenu.service
 sudo reboot
