@@ -17,7 +17,7 @@ from random import randint
 
 csvFile = "bezeTalkFace.csv"
 pygame.init()
-size=(800,440)
+size=(320,240)
 screen = pygame.display.set_mode(size)
 
 def bezeTalk(distance):
@@ -39,6 +39,27 @@ def bezeTalk(distance):
       ansNum = i[6]               # Index of answer
 
   # AquesTalk
+
+  k = int(randint(1,4))
+  if k == 1:
+    bezelie.moveHead (20)
+  elif k == 2:
+    bezelie.moveBack (10)
+  elif k == 3:
+    bezelie.moveHead (-10)
+    sleep(0.2)
+    bezelie.moveHead (0)
+    sleep(0.2)
+    bezelie.moveHead (-10)
+  elif k == 4:
+    bezelie.moveBack (-10)
+    sleep(0.2)
+    bezelie.moveBack (10)
+    sleep(0.2)
+    bezelie.moveBack (-10)
+    sleep(0.2)
+    bezelie.moveBack (0)
+
   print data[ansNum][2]
   subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "'+ data[ansNum ][2] +'" | aplay', shell=True)
 
@@ -56,14 +77,18 @@ cascade = cv2.CascadeClassifier(cascade_path)
 
 # Get Started
 bezelie.initPCA9685()
-bezelie.moveCenter()
+#bezelie.moveCenter()
+bezelie.moveHead (0)
+sleep(0.5)
+bezelie.moveBack (0)
+sleep(0.5)
 yaw = 0
 delta = 1
 
 # Main Loop
 with picamera.PiCamera() as camera:
   with picamera.array.PiRGBArray(camera) as stream:
-    camera.resolution = (800, 440) # ディスプレイの解像度に合わせてください。
+    camera.resolution = (320, 240) # ディスプレイの解像度に合わせてください。
     camera.hflip = True            # 上下反転。不要なら削除してください。
     camera.vflip = True            # 左右反転。不要なら削除してください。
     sleep (1)
@@ -74,7 +99,7 @@ with picamera.PiCamera() as camera:
       # グレースケール画像に変換しgrayに代入
       gray = cv2.cvtColor(stream.array, cv2.COLOR_BGR2GRAY)
       # grayから顔を探す
-      facerect = cascade.detectMultiScale(gray, scaleFactor=1.5, minNeighbors=2, minSize=(100,100), maxSize=(400,400))
+      facerect = cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=2, minSize=(60,80), maxSize=(200,220))
       # scaleFactor 大きな値にすると速度が早くなり、精度が落ちる。1.1〜1.9ぐらい。
       # minNeighbors 小さな値にするほど顔が検出されやすくなる。通常は3〜6。
       # minSize 検出する顔の最小サイズ。解像度に合わせて修正してください。
@@ -85,10 +110,13 @@ with picamera.PiCamera() as camera:
           # rect[0:2]+rect[2:4]:長方形の右下の座標
           cv2.rectangle(stream.array, tuple(rect[0:2]),tuple(rect[0:2]+rect[2:4]), (0,255,0), thickness=4)
 
-        bezelie.moveHead (20)
-        sleep (0.2)
+#        bezelie.moveHead (20)
+#        sleep (0.2)
         bezeTalk ("long")
         #subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "こんにちわー" | aplay', shell=True)
+        bezelie.moveHead (0)
+        sleep(0.5)
+        bezelie.moveBack (0)
         sleep(0.5)
 
       # pygameで画像を表示
@@ -107,7 +135,7 @@ with picamera.PiCamera() as camera:
 
       # yawサーボを回す
       bezelie.moveStage (yaw)
-      sleep (0.2)
+      sleep (0.1)
       yaw = yaw + delta
       if yaw > 15 or yaw < -15:
         delta = delta * -1

@@ -28,12 +28,12 @@ cascade_path =  "/usr/share/opencv/haarcascades/haarcascade_frontalface_alt.xml"
 cascade = cv2.CascadeClassifier(cascade_path)
 
 # Get Started
-bezelie.centering()
+bezelie.moveCenter()
 
 # Main Loop
 with picamera.PiCamera() as camera:
   with picamera.array.PiRGBArray(camera) as stream:
-    camera.resolution = (800, 480) # ディスプレイの解像度に合わせてください。
+    camera.resolution = (600, 480) # ディスプレイの解像度に合わせてください。
     camera.hflip = True            # 上下反転。不要なら削除してください。
     camera.vflip = True            # 左右反転。不要なら削除してください。
     sleep (1)
@@ -55,16 +55,16 @@ with picamera.PiCamera() as camera:
           # rect[0:2]+rect[2:4]:長方形の右下の座標
           cv2.rectangle(stream.array, tuple(rect[0:2]),tuple(rect[0:2]+rect[2:4]), (0,255,0), thickness=4)
 
-        bezelie.movePit (-15) # 背伸びをさせる
+        bezelie.moveHead (-15) # 背伸びをさせる
         sleep (0.2)
-        bezelie.moveRot ( 10)
+        bezelie.moveBack ( 10)
         sleep (0.2)
-        bezelie.moveRot (-10)
+        bezelie.moveBack (-10)
         sleep (0.4)
-        bezelie.moveRot ( 0)
+        bezelie.moveBack ( 0)
         subprocess.call('/home/pi/aquestalkpi/AquesTalkPi -s 120 "こんにちわー" | aplay', shell=True)
         sleep(0.5)
-        bezelie.movePit (0, 1)
+        bezelie.moveHead (0, 1)
         sleep(0.2)
 
       # pygameで画像を表示
