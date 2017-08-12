@@ -1,35 +1,34 @@
-// bezeMenu.js (node js)
-// ベゼリーのメニュー。
-// アプリの起動、アプリの設定が行える。
-// Updated in Jun 10th 2017 by Jun Toyoda.
+// node js
+// dialogの編集 
+// 
+// Updated in Aug 10th 2017 by Jun Toyoda.
 // ---------------------------------------------------------------------------------
 
 // モジュールの読み込み
 var http = require('http'); // httpサーバー・クライアント
-var fs = require('fs'); // ファイルおよびファイルシステムを操作するモジュール
-var ejs = require('ejs'); // テンプレートエンジンejs
-var url = require('url'); // URL文字列をパースやフォーマットするモジュール
-var qs = require('querystring'); // formから受信したクエリー文字列をオブジェクトに変換する
+var fs   = require('fs'); // ファイルおよびファイルシステムを操作するモジュール
+var ejs  = require('ejs'); // テンプレートエンジンejs
+var url  = require('url'); // URL文字列をパースやフォーマットするモジュール
+var qs   = require('querystring'); // formから受信したクエリー文字列をオブジェクトに変換する
 var exec = require('child_process').exec; // 子プロセスの生成と管理をするモジュール。
-var os = require('os');
-var CSV = require("comma-separated-values"); // CSVを配列変数やオブジェクトに変換する
-
+var os   = require('os');
+var CSV  = require("comma-separated-values"); // CSVを配列変数やオブジェクトに変換する
 
 // ejsファイルの読み込み
-var template = fs.readFileSync(__dirname + '/public_html/template.ejs', 'utf-8');
-var top = fs.readFileSync(__dirname + '/public_html/top.ejs', 'utf-8');
-var toHost = fs.readFileSync(__dirname + '/public_html/toHost.ejs', 'utf-8');
-var configBasic = fs.readFileSync(__dirname + '/public_html/configBasic.ejs', 'utf-8');
-var configDemo = fs.readFileSync(__dirname + '/public_html/configDemo.ejs', 'utf-8');
+var template         = fs.readFileSync(__dirname + '/public_html/template.ejs', 'utf-8');
+var top              = fs.readFileSync(__dirname + '/public_html/top.ejs', 'utf-8');
+var toHost           = fs.readFileSync(__dirname + '/public_html/toHost.ejs', 'utf-8');
+var configBasic      = fs.readFileSync(__dirname + '/public_html/configBasic.ejs', 'utf-8');
+var configDemo       = fs.readFileSync(__dirname + '/public_html/configDemo.ejs', 'utf-8');
 var editConversation = fs.readFileSync(__dirname + '/public_html/editConversation.ejs', 'utf-8');
-var editIntent = fs.readFileSync(__dirname + '/public_html/editIntent.ejs', 'utf-8');
-var selectIntent = fs.readFileSync(__dirname + '/public_html/selectIntent.ejs', 'utf-8');
-var editEntity = fs.readFileSync(__dirname + '/public_html/editEntity.ejs', 'utf-8');
-var selectIntent4d = fs.readFileSync(__dirname + '/public_html/selectIntent4d.ejs', 'utf-8');
-var editDialog = fs.readFileSync(__dirname + '/public_html/editDialog.ejs', 'utf-8');
-var execDemo = fs.readFileSync(__dirname + '/public_html/execDemo.ejs', 'utf-8');
-var execChat = fs.readFileSync(__dirname + '/public_html/execChat.ejs', 'utf-8');
-var stopPython = fs.readFileSync(__dirname + '/public_html/stopPython.ejs', 'utf-8');
+var editIntent       = fs.readFileSync(__dirname + '/public_html/editIntent.ejs', 'utf-8');
+var selectIntent     = fs.readFileSync(__dirname + '/public_html/selectIntent.ejs', 'utf-8');
+var editEntity       = fs.readFileSync(__dirname + '/public_html/editEntity.ejs', 'utf-8');
+var selectIntent4d   = fs.readFileSync(__dirname + '/public_html/selectIntent4d.ejs', 'utf-8');
+var editDialog       = fs.readFileSync(__dirname + '/public_html/editDialog.ejs', 'utf-8');
+var execDemo         = fs.readFileSync(__dirname + '/public_html/execDemo.ejs', 'utf-8');
+var execChat         = fs.readFileSync(__dirname + '/public_html/execChat.ejs', 'utf-8');
+var stopPython       = fs.readFileSync(__dirname + '/public_html/stopPython.ejs', 'utf-8');
 
 // 設定ファイルの読み込み
 // config.jsonの中が空だと謎のエラーが表示されて悩むことになる。例外処理を入れたい。
@@ -463,11 +462,11 @@ function doRequest(req, res){ // requestイベントが発生したら実行
 console.log ("Lets get started");
 
 var port = 3000 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
-// var host = getLocalAddress().ipv4[0].address;
-// console.log ("-"+host+"-");
+var host = getLocalAddress().ipv4[0].address;
+console.log ("-"+host+"-");
 
 //var host = 'localhost'
-var host = '10.0.0.1'
+// var host = '10.0.0.1' // ラズパイをサーバーにする時は、この行をコメントアウトする。
 
 var server = http.createServer(); // http.serverクラスのインスタンスを作る。戻値はhttp.server型のオブジェクト。
 server.on('request', doRequest); // serverでrequestイベントが発生した場合のコールバック関数を登録
