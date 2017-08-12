@@ -15,20 +15,19 @@ var os   = require('os');
 var CSV  = require("comma-separated-values"); // CSVを配列変数やオブジェクトに変換する
 
 // ejsファイルの読み込み
-var template       = fs.readFileSync(__dirname + '/public_html/template.ejs', 'utf-8');
-var top            = fs.readFileSync(__dirname + '/public_html/top.ejs', 'utf-8');
-var editChat       = fs.readFileSync(__dirname + '/public_html/editChat.ejs', 'utf-8');
-var editTime       = fs.readFileSync(__dirname + '/public_html/editTime.ejs', 'utf-8');
-var disableServer  = fs.readFileSync(__dirname + '/public_html/disableServer.ejs', 'utf-8');
-
-var editIntent       = fs.readFileSync(__dirname + '/public_html/editIntent.ejs', 'utf-8');
-var editEntity       = fs.readFileSync(__dirname + '/public_html/editEntity.ejs', 'utf-8');
-var editDialog       = fs.readFileSync(__dirname + '/public_html/editDialog.ejs', 'utf-8');
-var selectIntent     = fs.readFileSync(__dirname + '/public_html/selectIntent.ejs', 'utf-8');
-var selectIntent4d   = fs.readFileSync(__dirname + '/public_html/selectIntent4d.ejs', 'utf-8');
-var execDemo         = fs.readFileSync(__dirname + '/public_html/execDemo.ejs', 'utf-8');
-var execChat         = fs.readFileSync(__dirname + '/public_html/execChat.ejs', 'utf-8');
-var stopPython       = fs.readFileSync(__dirname + '/public_html/stopPython.ejs', 'utf-8');
+var template            = fs.readFileSync(__dirname + '/public_html/template.ejs', 'utf-8');
+var top                 = fs.readFileSync(__dirname + '/public_html/top.ejs', 'utf-8');
+var editChat            = fs.readFileSync(__dirname + '/public_html/editChat.ejs', 'utf-8');
+var editTime            = fs.readFileSync(__dirname + '/public_html/editTime.ejs', 'utf-8');
+var setTime             = fs.readFileSync(__dirname + '/public_html/setTime.ejs', 'utf-8');
+var editIntent          = fs.readFileSync(__dirname + '/public_html/editIntent.ejs', 'utf-8');
+var selectIntent4entity = fs.readFileSync(__dirname + '/public_html/selectIntent4entity.ejs', 'utf-8');
+var editEntity          = fs.readFileSync(__dirname + '/public_html/editEntity.ejs', 'utf-8');
+var selectIntent4dialog = fs.readFileSync(__dirname + '/public_html/selectIntent4dialog.ejs', 'utf-8');
+var editDialog          = fs.readFileSync(__dirname + '/public_html/editDialog.ejs', 'utf-8');
+var starting_pythonApp  = fs.readFileSync(__dirname + '/public_html/starting_pythonApp.ejs', 'utf-8');
+var stop_pythonApp      = fs.readFileSync(__dirname + '/public_html/stop_pythonApp.ejs', 'utf-8');
+var disableServer       = fs.readFileSync(__dirname + '/public_html/disableServer.ejs', 'utf-8');
 
 // 設定ファイルの読み込み
 // config.jsonの中が空だと謎のエラーが表示されて悩むことになる。例外処理を入れたい。
@@ -43,7 +42,7 @@ var routes = { // パスごとの表示内容を連想配列に格納
         "content":top}, // テンプレート
     "/editChat":{
         "title":"会話設定",
-        "message":"選んでちょ",
+        "message":"",
         "content":editChat},
     "/editTime":{
         "title":"時間設定",
@@ -56,34 +55,34 @@ var routes = { // パスごとの表示内容を連想配列に格納
         "title":"インテント（意図）の編集",
         "message":"インテントの追加や削除ができます。インテントとはロボットに伝えたい内容のことです。この文字が音声認識されるわけではないので、内容がわかるような簡潔な名称をつけてください",
         "content":editIntent},
-    "/selectIntent":{
+    "/selectIntent4entity":{
         "title":"エンティティ（同意語）の編集",
         "message":"エンティティを関連付けるインテントを選んでください。",
-        "content":selectIntent},
+        "content":selectIntent4entity},
     "/editEntity":{
         "title":"エンティティ（同意語）の編集",
         "message":"エンティティの追加や削除ができます。エンティティとはインテントをロボットに伝えるための具体的な言葉のことです。ひとつのインテントに対して複数設定することができます。ひらがなで入力してください（カタカナなどが含まれているとエラーになります）",
         "content":editEntity},
-    "/selectIntent4d":{
+    "/selectIntent4dialog":{
         "title":"ダイアログ（対話）の編集",
         "message":"ダイアログを関連付けるインテントを選んでください。",
-        "content":selectIntent4d},
+        "content":selectIntent4dialog},
     "/editDialog":{
         "title":"ダイアログ（対話）の編集",
         "message":"ダイアログの追加や削除ができます。ダイアログとはインテントに対するロボットの返答です。ひとつのインテントに対して複数設定した場合はランダムで選ばれます。",
         "content":editDialog},
-    "/stopPython":{
+    "/stop_pythonApp":{
         "title":"プログラム停止",
         "message":"デモを停止します",
-        "content":stopPython},
-    "/execChat":{
+        "content":stop_pythonApp},
+    "/starting_pythonApp":{
         "title":"チャットプログラム実行",
         "message":"デモを起動します",
-        "content":execChat},
-    "/execDemo":{
-        "title":"デモアプリ設定完了",
-        "message":"デモを起動します",
-        "content":execDemo}
+        "content":starting_pythonApp},
+    "/setTime":{
+        "title":"設定完了",
+        "message":"",
+        "content":setTime}
 };
 // グローバル変数は便利だが多用すべきではない
 global.postsLength;
@@ -152,10 +151,10 @@ function doRequest(req, res){ // requestイベントが発生したら実行
     }
     // GETリクエストの場合  -------------------------------------------------------------------------------
     if (req.method === "GET"){
-        if (url_parts.pathname == "/stopPython"){ // stopPython -------------------------------------------
+        if (url_parts.pathname == "/stop_pythonApp"){ // -------------------------------------------
             content = renderMessage();
             rendering (res, content);
-            var COMMAND = "sh stopPython.sh";
+            var COMMAND = "sh stop_pythonApp.sh";
             exec(COMMAND, function(error, stdout, stderr) {
                if (error !== null) {
                     console.log(error.message);
@@ -163,7 +162,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                     console.log(error.signal);
                 } // end of if
             }); // end of exec
-            var COMMAND = "sh stopJulius.sh";
+            var COMMAND = "sh stop_julius.sh";
             exec(COMMAND, function(error, stdout, stderr) {
                if (error !== null) {
                     console.log(error.message);
@@ -171,7 +170,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                     console.log(error.signal);
                 } // end of if
             }); // end of exec
-        } else if (url_parts.pathname == "/execChat"){ // execChat ----------------
+        } else if (url_parts.pathname == "/starting_pythonApp"){ // ----------------
             content = renderMessage();
             rendering (res, content);
                 line1 = '#!/bin/sh';
@@ -181,8 +180,8 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                 line3 = 'cd '+__dirname+'\n'+'python demoChat1.py';
                 line4 = 'exit 0';
                 var data = line1+'\n'+line2a+line2b+line2c+'\n'+line3+'\n'+line4;
-                fs.writeFile(__dirname + '/exeApp.sh', data, function (err) {
-                    var COMMAND = 'sh '+__dirname+'/exeApp.sh';
+                fs.writeFile(__dirname + '/starting_pythonApp.sh', data, function (err) {
+                    var COMMAND = 'sh '+__dirname+'/starting_pythonApp.sh';
                     exec(COMMAND, {maxBuffer : 1024 * 1024 * 1024}, function(error, stdout, stderr) {
                         console.log(stdout);
                         if (error !== null) {
@@ -197,7 +196,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
             rendering (res, content);
             setClient (req, res);
             return;
-        } else if (url_parts.pathname === "/selectIntent"){ // selectIntent -----------------------------------
+        } else if (url_parts.pathname === "/selectIntent4entity"){ // selectIntent -----------------------------------
             var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
             var intents = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
             content = ejs.render( template,
@@ -211,7 +210,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
             })});
             rendering (res, content);
             return;
-        } else if (url_parts.pathname === "/selectIntent4d"){ // selectIntent4d -----------------------------------
+        } else if (url_parts.pathname === "/selectIntent4dialog"){ // selectIntent4d -----------------------------------
             var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
             var intents = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
             content = ejs.render( template,
@@ -418,7 +417,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                 })});
                 rendering (res, content);
             }); // end of req on
-        } else if (url_parts.pathname == "/execDemo"){ // execDemo -------------------------------------------
+        } else if (url_parts.pathname == "/setTime"){ //  -------------------------------------------
             req.data = "";
             req.on("data", function(data) {
                 req.data += data;
