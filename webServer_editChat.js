@@ -15,17 +15,17 @@ var os   = require('os');
 var CSV  = require("comma-separated-values"); // CSVを配列変数やオブジェクトに変換する
 
 // ejsファイルの読み込み
-var template         = fs.readFileSync(__dirname + '/public_html/template.ejs', 'utf-8');
-var top              = fs.readFileSync(__dirname + '/public_html/top.ejs', 'utf-8');
-var toHost           = fs.readFileSync(__dirname + '/public_html/toHost.ejs', 'utf-8');
-var configBasic      = fs.readFileSync(__dirname + '/public_html/configBasic.ejs', 'utf-8');
-var configDemo       = fs.readFileSync(__dirname + '/public_html/configDemo.ejs', 'utf-8');
-var editConversation = fs.readFileSync(__dirname + '/public_html/editConversation.ejs', 'utf-8');
+var template       = fs.readFileSync(__dirname + '/public_html/template.ejs', 'utf-8');
+var top            = fs.readFileSync(__dirname + '/public_html/top.ejs', 'utf-8');
+var editChat       = fs.readFileSync(__dirname + '/public_html/editChat.ejs', 'utf-8');
+var editTime       = fs.readFileSync(__dirname + '/public_html/editTime.ejs', 'utf-8');
+var disableServer  = fs.readFileSync(__dirname + '/public_html/disableServer.ejs', 'utf-8');
+
 var editIntent       = fs.readFileSync(__dirname + '/public_html/editIntent.ejs', 'utf-8');
-var selectIntent     = fs.readFileSync(__dirname + '/public_html/selectIntent.ejs', 'utf-8');
 var editEntity       = fs.readFileSync(__dirname + '/public_html/editEntity.ejs', 'utf-8');
-var selectIntent4d   = fs.readFileSync(__dirname + '/public_html/selectIntent4d.ejs', 'utf-8');
 var editDialog       = fs.readFileSync(__dirname + '/public_html/editDialog.ejs', 'utf-8');
+var selectIntent     = fs.readFileSync(__dirname + '/public_html/selectIntent.ejs', 'utf-8');
+var selectIntent4d   = fs.readFileSync(__dirname + '/public_html/selectIntent4d.ejs', 'utf-8');
 var execDemo         = fs.readFileSync(__dirname + '/public_html/execDemo.ejs', 'utf-8');
 var execChat         = fs.readFileSync(__dirname + '/public_html/execChat.ejs', 'utf-8');
 var stopPython       = fs.readFileSync(__dirname + '/public_html/stopPython.ejs', 'utf-8');
@@ -39,22 +39,19 @@ obj = JSON.parse(json); // JSONをオブジェクトに変換する。ejsから�
 var routes = { // パスごとの表示内容を連想配列に格納
     "/":{
         "title":"BEZELIE",
-        "message":"bezeMenuへようこそ",
+        "message":"",
         "content":top}, // テンプレート
-    "/toHost":{
-        "title":"wifi設定（再起動）",
-        "message":"再起動します",
-        "content":toHost},
-    "/configBasic":{
-        "title":"BEZELIE",
-        "content":configBasic},
-    "/configDemo":{
-        "title":"デモアプリの設定",
-        "content":configDemo},
-    "/editConversation":{
+    "/editChat":{
         "title":"会話設定",
         "message":"選んでちょ",
-        "content":editConversation},
+        "content":editChat},
+    "/editTime":{
+        "title":"時間設定",
+        "content":editTime},
+    "/disableServer":{
+        "title":"",
+        "message":"再起動します",
+        "content":disableServer},
     "/editIntent":{
         "title":"インテント（意図）の編集",
         "message":"インテントの追加や削除ができます。インテントとはロボットに伝えたい内容のことです。この文字が音声認識されるわけではないので、内容がわかるような簡潔な名称をつけてください",
@@ -133,6 +130,17 @@ function getLocalAddress() {
     return ifacesObj;
 };
 
+function disableServer (req, res){ // wifi設定後再起動
+    var COMMAND = 'sh '+__dirname+'/setting_disableServer.sh';
+    exec(COMMAND, function(error, stdout, stderr) {
+        if (error !== null) {
+            console.log('exec error: ' + error);
+            return;
+            }
+        console.log('wpa: ' + stdout);
+    }); // end of exec
+}
+
 // リクエスト処理
 function doRequest(req, res){ // requestイベントが発生したら実行
     url_parts = url.parse(req.url); // URL情報をパース
@@ -184,18 +192,11 @@ function doRequest(req, res){ // requestイベントが発生したら実行
                         } // end of if
                     }); // end of exec
                 }); // end of writeFile
-        } else if (url_parts.pathname === "/toHost"){ // to Hosting -------------------------------------
+        } else if (url_parts.pathname === "/disableServer"){ //  -------------------------------------
             content = renderMessage();
             rendering (res, content);
-            var COMMAND = 'sh '+__dirname+'/settingHost.sh';
-            exec(COMMAND, function(error, stdout, stderr) {
-                if (error !== null) {
-                    console.log(error.message);
-                    console.log(error.code);
-                    console.log(error.signal);
-                }
-                return;
-            }); // end of exec
+            setClient (req, res);
+            return;
         } else if (url_parts.pathname === "/selectIntent"){ // selectIntent -----------------------------------
             var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
             var intents = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
@@ -239,7 +240,7 @@ function doRequest(req, res){ // requestイベントが発生したら実行
             })});
             rendering (res, content);
             return;
-        } else if (url_parts.pathname === "/configDemo"){ // configDemo -----------------------------------
+        } else if (url_parts.pathname === "/editTime"){ // editTime  -----------------------------------
             content = renderMessage();
             rendering (res, content);
             return;

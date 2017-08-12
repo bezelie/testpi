@@ -1,4 +1,4 @@
-<!-- config demo -->
+<!-- editTime -->
 <%
 var alarmOn0 = '', alarmOn1 = '', alarmKind0 = '', alarmKind1 = ''
 var checked = "checked = 'checked'";
@@ -7,7 +7,7 @@ if (obj.data1[0].alarmOn == 'true'){alarmOn0 = checked}else{alarmOn1 = checked}
 if (obj.data1[0].alarmKind == 'mild'){alarmKind0 = selected}else{alarmKind1 = selected}
 %>
 
-<p><%= message %></p>
+<p>アラームと動作時間を設定します</p>
 <hr>
 <form method="post" action="/execDemo" id="form">
 <p>アラーム、時報、雑談機能をもった家庭用ロボットです</p>
