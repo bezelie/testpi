@@ -48,7 +48,7 @@ obj_config = JSON.parse(json); // JSONをオブジェクトに変換する。ejs
 var routes = { // パスごとの表示内容を連想配列に格納
     "/":{
         "title":"BEZELIE",
-        "message":"",
+        "message":"べゼリーとの対話データや時間設定ができます",
         "content":top}, // テンプレート
     "/editChat":{
         "title":"会話設定",
@@ -86,8 +86,8 @@ var routes = { // パスごとの表示内容を連想配列に格納
         "message":"デモを停止します",
         "content":stop_pythonApp},
     "/starting_pythonApp":{
-        "title":"チャットプログラム実行",
-        "message":"デモを起動します",
+        "title":"プログラムの実行",
+        "message":"再起動します",
         "content":starting_pythonApp},
     "/setTime":{
         "title":"設定完了",
@@ -102,24 +102,6 @@ var routes = { // パスごとの表示内容を連想配列に格納
 // global.postsLength;
 
 // 関数定義
-function renderMessage (){ // ページに表示する内容を変数conntetに詰め込む
-    content = ejs.render( template,
-        {
-        title: routes[url_parts.pathname].title,
-        content: ejs.render(
-            routes[url_parts.pathname].content,
-                {
-                    message: routes[url_parts.pathname].message  // pathnameに応じたメッセージを指定
-                })});
-   return content;
-}
-
-function rendering (res, content){ // ページにcontentを描画する
-    res.writeHead(200, {'Content-Type': 'text/html; charset=UTF-8'}); // ステイタスコードやhttpヘッダーをクライアントに送信する。
-    res.write(content);
-    res.end();
-}
-
 function getLocalAddress() {
     var ifacesObj = {}
     ifacesObj.ipv4 = [];
@@ -143,15 +125,29 @@ function getLocalAddress() {
     return ifacesObj;
 };
 
-function disableServer (req, res){ // サーバーを無効化する設定をしたあと再起動
-    var COMMAND = 'sh '+__dirname+'/setting_disableServer.sh';
+function reboot(){ // ラズパイの再起動
+    var COMMAND = 'sudo reboot';
     exec(COMMAND, function(error, stdout, stderr) {
-        if (error !== null) {
-            console.log('exec error: ' + error);
-            return;
-            }
-        console.log('wpa: ' + stdout);
     }); // end of exec
+}
+
+var error = "";
+var posts = "";
+var intent = ""; // 今回選択されたintent（単数）
+
+function pageWrite (res){
+    content = ejs.render( template, {
+        title: routes[url_parts.pathname].title,
+        error: error,
+        content: ejs.render( routes[url_parts.pathname].content, {
+                    message: routes[url_parts.pathname].message,  // pathnameに応じたメッセージを指定
+                    posts: posts, // これもインテントリスト？重複してるかも。
+                    intent: intent // 今回選ばれたインテント
+        })
+    });
+    res.writeHead(200, {'Content-Type': 'text/html; charset=UTF-8'}); // ステイタスコードやhttpヘッダーをクライアントに送信する。
+    res.write(content);
+    res.end();
 }
 
 // ルーティング
@@ -159,14 +155,16 @@ function routing(req, res){ // requestイベントが発生したら実行
     url_parts = url.parse(req.url); // URL情報をパース処理
     // 想定していないページに飛ぼうとした場合の処理
     if (routes[url_parts.pathname] == null){ // パスが変数routesに登録されていない場合はエラーを表示する
-        var content = "<h1>NOT FOUND PAGE:" + req.url + "</h1>"
-        rendering (res, content);
+        content = "<h1>NOT FOUND PAGE:" + req.url + "</h1>"
+        res.writeHead(200, {'Content-Type': 'text/html; charset=UTF-8'}); // ステイタスコードやhttpヘッダーをクライアントに送信する。
+        res.write(content);
+        res.end();
         return;
     }
     // GETリクエストの場合  -------------------------------------------------------------------------------
     if (req.method === "GET"){
         if (url_parts.pathname == "/stop_pythonApp"){ // -------------------------------------------
-            rendering (res, renderMessage());
+            pageWrite(res);
             var COMMAND = "sh stop_pythonApp.sh";
             exec(COMMAND, function(error, stdout, stderr) {
                if (error !== null) {
@@ -180,49 +178,30 @@ function routing(req, res){ // requestイベントが発生したら実行
                 } // end of if
             }); // end of exec
         } else if (url_parts.pathname == "/starting_pythonApp"){ // ----------------
-            rendering (res, renderMessage());
-            var COMMAND = 'sh '+__dirname+'/starting_pythonApp.sh';
+            pageWrite(res);
+            var COMMAND = 'sh '+__dirname+'/setting_enableApp.sh';
             exec(COMMAND, {maxBuffer : 1024 * 1024 * 1024}, function(error, stdout, stderr) {
-                console.log(stdout);
-                if (error !== null) {
-                    console.log(error.message);
-                } // end of if
+            // reboot(); // ラズパイを再起動させる。
             }); // end of exec
         } else if (url_parts.pathname === "/disableServer"){ //  -------------------------------------
-            rendering (res, renderMessage());
-            disableServer (req, res);
+            pageWrite(res);
+            var COMMAND = 'sh '+__dirname+'/setting_disableServer.sh';
+            exec(COMMAND, function(error, stdout, stderr) {
+                // reboot();
+            }); // end of exec
             return;
         } else if (url_parts.pathname === "/selectIntent4entity" || url_parts.pathname === "/selectIntent4dialog"){
             var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
-            var intents = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
-            content = ejs.render( template,
-            {
-                title: routes[url_parts.pathname].title,
-                content: ejs.render(
-                routes[url_parts.pathname].content,  // pathnameに応じたテンプレートを指定
-                {
-                    message: routes[url_parts.pathname].message,  // pathnameに応じたメッセージを指定
-                    intents: intents // 投稿の内容
-            })});
-            rendering (res, content);
+            posts = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
+            pageWrite(res);
             return;
         } else if (url_parts.pathname === "/editIntent"){ // editIntent -----------------------------------
             var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
-            var posts = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
-            content = ejs.render( template,
-            {
-                title: routes[url_parts.pathname].title,
-                content: ejs.render(
-                routes[url_parts.pathname].content,  // pathnameに応じたテンプレートを指定
-                {
-                    message: routes[url_parts.pathname].message,  // pathnameに応じたメッセージを指定
-                    posts: posts // 投稿の内容
-            })});
-            rendering (res, content);
+            posts = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
+            pageWrite(res);
             return;
         } else {
-            content = renderMessage();
-            rendering (res, content);
+            pageWrite(res);
             return;
         }// end of if
     } // end of get request
@@ -251,8 +230,8 @@ function routing(req, res){ // requestイベントが発生したら実行
                         text = text+intent+','+query.newItem+'\n';
                         posts.push([intent,query.newItem]); // newItemをpostの配列に入れる。
                     }
-//                }else if (query.intent){ // intentが設定された場合
-//                    intent = query.intent; // グローバル変数intentに代入。もっといい方法ないの？
+                }else if (query.intent){ // intentが設定された場合
+                    intent = query.intent; // グローバル変数intentに代入。もっといい方法ないの？
                 }else{ // delItem
                     text = '';
                     for (var i=0;i < posts.length; i++ ) {
@@ -265,19 +244,7 @@ function routing(req, res){ // requestイベントが発生したら実行
                 fs.writeFileSync(__dirname + '/chatDialog.csv', text , 'utf8', function (err) { // ファイルに書込
                     console.log(err);
                 });
-
-                content = ejs.render( template,
-                {
-                    title: routes[url_parts.pathname].title,
-                    content: ejs.render(
-                    routes[url_parts.pathname].content,  // pathnameに応じたテンプレートを指定
-                    {
-                        message: routes[url_parts.pathname].message,  // pathnameに応じたメッセージを指定
-                        intent: intent, // インテント
-                        posts: posts // 投稿の内容
-                })});
-//                console.log (posts);
-                rendering (res, content);
+                pageWrite(res);
             }); // end of req on
         } else if (url_parts.pathname == "/editEntity"){ // editEntity -------------------------------------------
             req.data = "";
@@ -302,8 +269,8 @@ function routing(req, res){ // requestイベントが発生したら実行
                         text = text+intent+','+query.newItem+'\n';
                         posts.push([intent,query.newItem]); // newItemをpostの配列に入れる。
                     }
-//                }else if (query.intent){ // intentが設定された場合
-//                    intent = query.intent; // グローバル変数intentに代入。もっといい方法ないの？
+                }else if (query.intent){ // selectIntentから来た場合
+                    intent = query.intent; // グローバル変数intentに代入。もっといい方法ないの？
                 }else{ // delItem
                     text = '';
                     for (var i=0;i < posts.length; i++ ) {
@@ -330,18 +297,7 @@ function routing(req, res){ // requestイベントが発生したら実行
                     }
                 });
                 });
-
-                content = ejs.render( template,
-                {
-                    title: routes[url_parts.pathname].title,
-                    content: ejs.render(
-                    routes[url_parts.pathname].content,  // pathnameに応じたテンプレートを指定
-                    {
-                        message: routes[url_parts.pathname].message,  // pathnameに応じたメッセージを指定
-                        intent: intent, // インテント
-                        posts: posts // 投稿の内容
-                })});
-                rendering (res, content);
+                pageWrite(res);
             }); // end of req on
         } else if (url_parts.pathname == "/editIntent"){ // editIntent -------------------------------------------
             req.data = "";
@@ -378,17 +334,7 @@ function routing(req, res){ // requestイベントが発生したら実行
                 fs.writeFileSync(__dirname + '/chatIntent.csv', text , 'utf8', function (err) { // ファイルに書込
                     console.log(err);
                 });
-
-                content = ejs.render( template,
-                {
-                    title: routes[url_parts.pathname].title,
-                    content: ejs.render(
-                    routes[url_parts.pathname].content,  // pathnameに応じたテンプレートを指定
-                    {
-                        message: routes[url_parts.pathname].message,  // pathnameに応じたメッセージを指定
-                        posts: posts // 投稿の内容
-                })});
-                rendering (res, content);
+                pageWrite(res);
             }); // end of req on
         } else if (url_parts.pathname == "/setTime"){ //  -------------------------------------------
             req.data = "";
@@ -396,33 +342,16 @@ function routing(req, res){ // requestイベントが発生したら実行
                 req.data += data;
             });
             req.on("end", function() {
-                obj.data1[0] = qs.parse(req.data);
-                fs.writeFile(__dirname + '/config.json', JSON.stringify(obj), function (err) {
+                obj_config.data1[0] = qs.parse(req.data);
+                fs.writeFile(__dirname + '/data_chat.json', JSON.stringify(obj_config), function (err) {
                     console.log(err);
                 });
-                content = renderMessage();
-                rendering (res, content);
-
-                line1 = '#!/bin/sh';
-                line2a = "ps aux | grep python | grep -v grep | awk '{ ";
-                line2b = 'print "kill -9", $2 ';
-                line2c = "}' | sh";
-                line3 = 'cd '+__dirname+'\n'+'python testTalk1.py';
-                line4 = 'exit 0';
-                var data = line1+'\n'+line2a+line2b+line2c+'\n'+line3+'\n'+line4;
-                fs.writeFile(__dirname + '/exeApp.sh', data, function (err) {
-                    console.log(err);
-                    var COMMAND = 'sh '+__dirname+'/exeApp.sh';
-                    exec(COMMAND, function(error, stdout, stderr) {
-                        if (error !== null) {
-                            console.log(error.message);
-                        }
-                    });
-                }); // end of writeFile
+                pageWrite(res);
             }); // end of req on
         } else { // 該当せず -------------------------------------------------------------------------------
-            var content = "NO-POST!!";
-            rendering (res, content);
+            res.writeHead(200, {'Content-Type': 'text/html; charset=UTF-8'});
+            res.write("NO-POST!!");
+            res.end();
             return;
         } // end of if
     } // end of POST request

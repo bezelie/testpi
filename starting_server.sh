@@ -6,5 +6,5 @@ sleep 10
 # DHCPサービスの起動
 sudo service isc-dhcp-server start
 # node-js起動
-node bezeHostAndApp.js
+node webServer_editChat.js
 exit 0

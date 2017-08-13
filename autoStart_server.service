@@ -3,7 +3,7 @@ Description = starting DHCP service and node-js
 After=syslog.target
 
 [Service]
-ExecStart=/home/pi/bezelie/testpi/startingHostAndApp.sh
+ExecStart=/home/pi/bezelie/testpi/starting_server.sh
 Restart=no
 Type=simple
 StandardOutput=syslog

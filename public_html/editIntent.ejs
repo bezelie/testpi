@@ -4,6 +4,7 @@
 
 <body>
 <%= message %>
+<% postsLength = posts.length %>
 <hr>
 <form method="post" action="/editIntent" id="addItem">
 <table border="1">
@@ -29,6 +30,7 @@
 
 <script>
 window.onload = function(){
+<!--        window.alert('すでにそのインテントは登録されています'); -->
 }
 document.getElementById('addItem').onsubmit = function(){
     var keyword = document.getElementById('addItem').newItem.value;

@@ -8,13 +8,13 @@
 <hr>
 <form method="post" action="/editDialog" id="addItem">
 <table border="1">
-    <tr align="center"><td>新規エンティティ</td><td><input type="text" name="newItem"></td>
+    <tr align="center"><td> 新規ダイアログ </td><td><input type="text" name="newItem"></td>
     <td><input type="submit" value="追加" style="font-size:16px;"></td></tr>
 </table>
 </form>
 <form method="post" action="/editDialog" id="delItem">
 <table border="1">
-    <tr align="center"><td>削除したい番号　</td><td><input type="text" name="delNum"></td>
+    <tr align="center"><td> 削除したい番号 </td><td><input type="text" name="delNum"></td>
     <td><input type="submit" value="削除" style="font-size:16px;"></td></tr>
 </table>
 </form>
@@ -41,10 +41,11 @@ document.getElementById('addItem').onsubmit = function(){
 }
 document.getElementById('delItem').onsubmit = function(){
     var keyword = document.getElementById('delItem').delNum.value;
+    leng = <%= postsLength %>
     if (keyword.length == 0){
         window.alert('入力欄に削除したいダイアログの番号を入力してください');
         return false;
-    } else if (keyword >= postsLength){
+    } else if (keyword >= leng){
         window.alert('値が大きすぎます');
         return false;
     } else {

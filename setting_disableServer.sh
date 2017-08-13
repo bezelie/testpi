@@ -15,10 +15,6 @@ sudo cp config/hostapd_original.conf /etc/hostapd/hostapd.conf
 sudo cp config/dhcpcd_original.conf /etc/dhcpcd.conf
 # wlan0をアクセスポイントにすることの無効化
 sudo cp config/interfaces_original /etc/network/interfaces
-# DHCPサービスとnode-jsの自動起動を解除
-sudo systemctl disable bezeHost.service
-sudo systemctl disable bezeHostAndApp.service
-sudo systemctl disable bezeApp.service
-# sudo cp bezeMenu.service /etc/systemd/system/
-# sudo systemctl enable bezeMenu.service
-sudo reboot
+# node-jsとアプリの自動起動の無効化
+sudo systemctl disable autoStart_app.service
+sudo systemctl disable autoStart_server.service

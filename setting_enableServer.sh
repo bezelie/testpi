@@ -1,4 +1,4 @@
-# ラズパイをアクセスポイントに
+# ラズパイをアクセスポイントにする
 #!/bin/sh
 SCRIPT_DIR=`dirname $0`
 cd $SCRIPT_DIR
@@ -18,12 +18,7 @@ sudo cp config/hostapd_changed /etc/default/hostapd
 sudo cp config/dhcpd_changed.conf /etc/dhcp/dhcpd.conf
 sudo cp config/isc-dhcp-server_changed /etc/default/isc-dhcp-server
 # dhcpサービスとnode-jsを起動するため自動起動を設定する
-sudo systemctl disable bezeMenu.service
-sudo systemctl disable bezeHost.service
-<<<<<<< HEAD
-=======
-sudo systemctl disable bezeApp.service
->>>>>>> 47a9ed41055b98f53712141548d4a38b52d3e18e
-sudo cp bezeHostAndApp.service /etc/systemd/system/
-sudo systemctl enable bezeHostAndApp.service
+sudo cp autoStart_server.service /etc/systemd/system/
+sudo systemctl enable autoStart_server.service
+sudo systemctl enable autoStart_app.service
 sudo reboot

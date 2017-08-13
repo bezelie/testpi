@@ -38,13 +38,21 @@ document.getElementById('addItem').onsubmit = function(){
         window.alert('入力欄に追加したいエンティティを入力してください');
         return false;
     }
+    for (i=0;i<keyword.length;i++){
+        var unicode = keyword.charCodeAt(i);
+        if ( unicode<0x3040 || unicode>0x309f ){
+            window.alert('エンティティはひらがなで入力してください');
+            return false;
+        }
+    }
 }
 document.getElementById('delItem').onsubmit = function(){
     var keyword = document.getElementById('delItem').delNum.value;
+    leng = <%= postsLength %>
     if (keyword.length == 0){
         window.alert('入力欄に削除したいエンティティの番号を入力してください');
         return false;
-    } else if (keyword >= postsLength){
+    } else if (keyword >= leng){
         window.alert('値が大きすぎます');
         return false;
     } else {
