@@ -20,5 +20,6 @@ sudo cp config/isc-dhcp-server_changed /etc/default/isc-dhcp-server
 # dhcpサービスとnode-jsを起動するため自動起動を設定する
 sudo cp autoStart_server.service /etc/systemd/system/
 sudo systemctl enable autoStart_server.service
-sudo systemctl enable autoStart_app.service
+# sudo cp autoStart_app.service /etc/systemd/system/
+# sudo systemctl enable autoStart_app.service
 sudo reboot

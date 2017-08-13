@@ -19,6 +19,11 @@ var qs   = require('querystring');
                             //    qs.parse();
 var exec = require('child_process').exec; 
                             // 子プロセスの生成と管理をするモジュール。
+                            //    exec(COMMAND, [options], callback(error, stdout, stderr) {}
+                            //    option maxBuffer:バッファの最大容量(byte)
+                            //    error :エラーオブジェクト
+                            //    stdout:標準出力に出力されたデータ
+                            //    stderr:標準エラー出力に出力されたデータ
 var os   = require('os');
 var CSV  = require("comma-separated-values"); 
                             // CSVを配列変数やオブジェクトに変換する
@@ -131,14 +136,19 @@ function reboot(){ // ラズパイの再起動
     }); // end of exec
 }
 
-var error = "";
+var errorMsg = ""; // これが空欄のときはエラー無し
 var posts = "";
-var intent = ""; // 今回選択されたintent（単数）
+var intent = "";   // 今回選択されたintent（単数）
+
+var matrix = new Array(200);
+for (var i = 0; i < matrix.length; i++){
+	matrix[i] = new Array(2);
+}
 
 function pageWrite (res){
     content = ejs.render( template, {
         title: routes[url_parts.pathname].title,
-        error: error,
+        errorMsg: errorMsg,
         content: ejs.render( routes[url_parts.pathname].content, {
                     message: routes[url_parts.pathname].message,  // pathnameに応じたメッセージを指定
                     posts: posts, // これもインテントリスト？重複してるかも。
@@ -150,9 +160,31 @@ function pageWrite (res){
     res.end();
 }
 
+function delItem (query,posts){ // アイテムの削除
+    text = '';
+    for (var i=0;i < posts.length; i++ ) {
+        if (i != query.delNum){
+            text = text+posts[i]+'\n';
+        }
+    }
+    posts.splice(query.delNum, 1); // postsからもdelNum行を削除
+    return text;
+}
+
+function delChk (query, posts, intent){ // 削除しようとしている番号が、選択中のインテントのものかを調べる
+    errorMsg = "番号が違います";
+    for (var i=0;i < posts.length; i++ ) {
+        if (posts[i][0]==intent && i==query.delNum){
+            errorMsg = "";
+        }
+    }
+    return errorMsg;
+}
+
 // ルーティング
 function routing(req, res){ // requestイベントが発生したら実行
     url_parts = url.parse(req.url); // URL情報をパース処理
+    errorMsg = "";
     // 想定していないページに飛ぼうとした場合の処理
     if (routes[url_parts.pathname] == null){ // パスが変数routesに登録されていない場合はエラーを表示する
         content = "<h1>NOT FOUND PAGE:" + req.url + "</h1>"
@@ -163,7 +195,23 @@ function routing(req, res){ // requestイベントが発生したら実行
     }
     // GETリクエストの場合  -------------------------------------------------------------------------------
     if (req.method === "GET"){
-        if (url_parts.pathname == "/stop_pythonApp"){ // -------------------------------------------
+        if (url_parts.pathname === "/editIntent"){ // editIntent -----------------------------------
+            var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
+            posts = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
+            pageWrite(res);
+            return;
+        } else if (url_parts.pathname === "/selectIntent4entity" || url_parts.pathname === "/selectIntent4dialog"){
+            var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
+            posts = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
+            pageWrite(res);
+            return;
+        } else if (url_parts.pathname == "/starting_pythonApp"){ // ----------------
+            pageWrite(res);
+            var COMMAND = 'sh '+__dirname+'/setting_enableApp.sh';
+            exec(COMMAND, {maxBuffer : 1024 * 1024 * 1024}, function(error, stdout, stderr) {
+            // reboot(); // ラズパイを再起動させる。
+            }); // end of exec
+        } else if (url_parts.pathname == "/stop_pythonApp"){ // -------------------------------------------
             pageWrite(res);
             var COMMAND = "sh stop_pythonApp.sh";
             exec(COMMAND, function(error, stdout, stderr) {
@@ -173,32 +221,13 @@ function routing(req, res){ // requestイベントが発生したら実行
             }); // end of exec
             var COMMAND = "sh stop_julius.sh";
             exec(COMMAND, function(error, stdout, stderr) {
-               if (error !== null) {
-                    console.log(error.message);
-                } // end of if
-            }); // end of exec
-        } else if (url_parts.pathname == "/starting_pythonApp"){ // ----------------
-            pageWrite(res);
-            var COMMAND = 'sh '+__dirname+'/setting_enableApp.sh';
-            exec(COMMAND, {maxBuffer : 1024 * 1024 * 1024}, function(error, stdout, stderr) {
-            // reboot(); // ラズパイを再起動させる。
             }); // end of exec
         } else if (url_parts.pathname === "/disableServer"){ //  -------------------------------------
             pageWrite(res);
             var COMMAND = 'sh '+__dirname+'/setting_disableServer.sh';
             exec(COMMAND, function(error, stdout, stderr) {
-                // reboot();
+               reboot();
             }); // end of exec
-            return;
-        } else if (url_parts.pathname === "/selectIntent4entity" || url_parts.pathname === "/selectIntent4dialog"){
-            var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
-            posts = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
-            pageWrite(res);
-            return;
-        } else if (url_parts.pathname === "/editIntent"){ // editIntent -----------------------------------
-            var text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
-            posts = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
-            pageWrite(res);
             return;
         } else {
             pageWrite(res);
@@ -218,32 +247,34 @@ function routing(req, res){ // requestイベントが発生したら実行
                 posts = new CSV(text, {header:false}).parse(); //  TEXTをCSVを仲介してリスト変数に変換する
                 postsLength = posts.length; // ejsに受け渡すためグローバル変数を利用
 
-                if (query.newItem){ // addItem
-                    var flag = true;
+                if (query.newItem){ // 新規追加の場合。重複をチェックする。
                     for (var i=0;i < posts.length; i++ ) {
                         if (posts [i][0] == intent && posts[i][1] == query.newItem){
-                            console.log ('It has existed');
-                            flag = false;
+                            errorMsg = "すでに登録されています";
                         }
                     }
-                    if (flag == true){ 
+                    if (errorMsg == ""){ // 重複がなかった場合。追加する。
                         text = text+intent+','+query.newItem+'\n';
                         posts.push([intent,query.newItem]); // newItemをpostの配列に入れる。
                     }
-                }else if (query.intent){ // intentが設定された場合
-                    intent = query.intent; // グローバル変数intentに代入。もっといい方法ないの？
-                }else{ // delItem
-                    text = '';
-                    for (var i=0;i < posts.length; i++ ) {
-                        if (i != query.delNum){
-                            text = text+posts[i]+'\n';
-                        }
+                }else if (query.intent){ // intentを選択した場合の処理。
+                    intent = query.intent; // グローバル変数intentに代入。
+                    errorMsg = " ";
+                }else{ // delItem  削除の場合
+                    if(isNaN(query.delNum)){ // 数字じゃない場合
+                        errorMsg = "数字を入力してください";
+                    }else{
+                        errorMsg = delChk(query, posts, intent);
                     }
-                    posts.splice(query.delNum, 1); // postsからもdelNum行を削除
+                    if (errorMsg == ""){
+                        text = delItem(query,posts);
+                    }
                 }
-                fs.writeFileSync(__dirname + '/chatDialog.csv', text , 'utf8', function (err) { // ファイルに書込
-                    console.log(err);
-                });
+                // chatDialog.csvに結果を書き出す。
+                if (errorMsg == ""){
+                    fs.writeFileSync(__dirname + '/chatDialog.csv', text , 'utf8', function (err) { // ファイルに書込
+                    });
+                }
                 pageWrite(res);
             }); // end of req on
         } else if (url_parts.pathname == "/editEntity"){ // editEntity -------------------------------------------
@@ -258,45 +289,48 @@ function routing(req, res){ // requestイベントが発生したら実行
                 postsLength = posts.length; // ejsに受け渡すためグローバル変数を利用
 
                 if (query.newItem){ // addItem
-                    var flag = true;
-                    for (var i=0;i < posts.length; i++ ) {
-                        if (posts [i][0] == intent && posts[i][1] == query.newItem){
-                            console.log ('It has existed');
-                            flag = false;
+                    // ひらがなじゃなかったらエラー
+                    for (i=0;i<query.newItem.length;i++){
+                        var unicode = query.newItem.charCodeAt(i);
+                        if ( unicode<0x3040 || unicode>0x309f ){
+                            errorMsg = "エンティティはひらがなで入力してください";
                         }
                     }
-                    if (flag == true){ 
+                    for (var i=0;i < posts.length; i++ ) {
+                        if (posts [i][0] == intent && posts[i][1] == query.newItem){
+                            errorMsg = "すでに登録されています";
+                        }
+                    }
+                    if (errorMsg == ""){ 
                         text = text+intent+','+query.newItem+'\n';
                         posts.push([intent,query.newItem]); // newItemをpostの配列に入れる。
                     }
                 }else if (query.intent){ // selectIntentから来た場合
-                    intent = query.intent; // グローバル変数intentに代入。もっといい方法ないの？
+                    intent = query.intent; // グローバル変数intentに代入。
+                    errorMsg = " ";
                 }else{ // delItem
-                    text = '';
-                    for (var i=0;i < posts.length; i++ ) {
-                        if (i != query.delNum){
-                            text = text+posts[i]+'\n';
-                        }
+                    if(isNaN(query.delNum)){
+                        errorMsg = "数字を入力してください";
+                    }else{
+                        errorMsg = delChk(query, posts, intent);
                     }
-                    posts.splice(query.delNum, 1); // postsからもdelNum行を削除
+                    if (errorMsg == ""){
+                        text = delItem(query,posts);
+                    }
                 }
-                fs.writeFileSync(__dirname + '/chatEntity.csv', text , 'utf8', function (err) { // ファイルに書込
-                    console.log(err);
-                });
-
-                var COMMAND = 'sudo sed -E "s/,/    /g" chatEntity.csv > chatEntity.tsv'; // csvをtsvに変換
-                exec(COMMAND, function(error, stdout, stderr) {
-                    if (error !== null) {
-                        console.log(error.message);
-                    }
-
-                var COMMAND = 'iconv -f utf8 -t eucjp chatEntity.tsv | /home/pi/dictation-kit-v4.4/src/julius-4.4.2/gramtools/yomi2voca/yomi2voca.pl > chatEntity.dic'; // tsvをdicに変換
-                exec(COMMAND, function(error, stdout, stderr) {
-                    if (error !== null) {
-                        console.log(error.message);
-                    }
-                });
-                });
+                // chatEntity.csvに結果を書き込み
+               if (errorMsg == ""){
+                   fs.writeFileSync(__dirname + '/chatEntity.csv', text , 'utf8', function (err) { // ファイルに書込
+                       // csvファイルをタブセパレート(tsv)に変換
+                       var COMMAND = 'sudo sed -E "s/,/    /g" chatEntity.csv > chatEntity.tsv'; // csvをtsvに変換
+                       exec(COMMAND, function(error, stdout, stderr) {
+                           // tsvファイルをjuliusのdic形式に変換
+                           var COMMAND = 'iconv -f utf8 -t eucjp chatEntity.tsv | /home/pi/dictation-kit-v4.4/src/julius-4.4.2/gramtools/yomi2voca/yomi2voca.pl > chatEntity.dic'; // tsvをdicに変換
+                           exec(COMMAND, function(error, stdout, stderr) {
+                           });
+                       });
+                   });
+                }
                 pageWrite(res);
             }); // end of req on
         } else if (url_parts.pathname == "/editIntent"){ // editIntent -------------------------------------------
@@ -311,29 +345,28 @@ function routing(req, res){ // requestイベントが発生したら実行
                 postsLength = posts.length; // ejsに受け渡すためグローバル変数を利用
 
                 if (query.newItem){ // addItem
-                    var flag = true;
                     for (var i=0;i < posts.length; i++ ) {
                         if (posts[i][1] == query.newItem){
-                            console.log ('It has existed');
-                            flag = false;
+                            errorMsg = "すでに登録されています";
                         }
                     }
-                    if (flag == true){ 
+                    if (errorMsg == ""){ 
                         text = text+'common,'+query.newItem+'\n';
                         posts.push(['common',query.newItem]); // newItemをpostの配列に入れる。
                     }
                 }else{ // delItem
-                    text = '';
-                    for (var i=0;i < posts.length; i++ ) {
-                        if (i != query.delNum){
-                            text = text+posts[i]+'\n';
-                        }
-                    }
-                    posts.splice(query.delNum, 1);
+                    if(isNaN(query.delNum)){
+                        errorMsg = "数字を入力してください";
+                    } else if(query.delNum >= posts.length) {
+                        errorMsg = "数字が大きすぎます";
+                    } else {
+                        text = delItem(query,posts);
+                   }
                 }
-                fs.writeFileSync(__dirname + '/chatIntent.csv', text , 'utf8', function (err) { // ファイルに書込
-                    console.log(err);
-                });
+                if (errorMsg == ""){
+                    fs.writeFileSync(__dirname + '/chatIntent.csv', text , 'utf8', function (err) { // ファイルに書込
+                    });
+                }
                 pageWrite(res);
             }); // end of req on
         } else if (url_parts.pathname == "/setTime"){ //  -------------------------------------------
@@ -344,7 +377,6 @@ function routing(req, res){ // requestイベントが発生したら実行
             req.on("end", function() {
                 obj_config.data1[0] = qs.parse(req.data);
                 fs.writeFile(__dirname + '/data_chat.json', JSON.stringify(obj_config), function (err) {
-                    console.log(err);
                 });
                 pageWrite(res);
             }); // end of req on
@@ -362,7 +394,7 @@ function routing(req, res){ // requestイベントが発生したら実行
 console.log ("Lets get started");
 
 var port = 3000 // 1024以上の数字なら何でもいいが、expressは3000をデフォにしているらしい
-var host = getLocalAddress().ipv4[0].address;
+var host = getLocalAddress().ipv4[0].address; // IPアドレスの取得
 console.log ("-"+host+"-");
 
 // var host = 'localhost'
@@ -373,4 +405,3 @@ server.on('request', routing); // serverでrequestイベントが発生した場
 //server.listen(port, host) // listenメソッド実行。サーバーを待ち受け状態にする。
 server.listen(port) // listenメソッド実行。サーバーを待ち受け状態にする。
 console.log ("server is listening at "+host+":"+port);
-

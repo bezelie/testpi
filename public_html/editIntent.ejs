@@ -30,7 +30,6 @@
 
 <script>
 window.onload = function(){
-<!--        window.alert('すでにそのインテントは登録されています'); -->
 }
 document.getElementById('addItem').onsubmit = function(){
     var keyword = document.getElementById('addItem').newItem.value;
@@ -45,11 +44,6 @@ document.getElementById('delItem').onsubmit = function(){
     if (keyword.length == 0){
         window.alert('入力欄に削除したいインテントの番号を入力してください');
         return false;
-    } else if (keyword >= leng){
-        window.alert("値が大きすぎます");
-        return false;
-    } else {
-        window.alert(keyword+' を削除します');
     }
 }
 </script>
