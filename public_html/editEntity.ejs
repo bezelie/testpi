@@ -41,7 +41,6 @@ document.getElementById('addItem').onsubmit = function(){
 }
 document.getElementById('delItem').onsubmit = function(){
     var keyword = document.getElementById('delItem').delNum.value;
-    leng = <%= postsLength %>
     if (keyword.length == 0){
         window.alert('入力欄に削除したいエンティティの番号を入力してください');
         return false;
