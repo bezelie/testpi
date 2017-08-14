@@ -1,1 +1,1 @@
-{"data0":[{"a":"0","b":"1","c":"2","d":"3"}],"data1":[{"alarmOn":"false","alarmTime":"06:00","alarmKind":"mild","alarmVol":"60","awake1Start":"07:00","awake1End":"11:50","awake2Start":"11:50","awake2End":"16:50"}]}
+{"data0":[{"a":"0","b":"1","c":"2","d":"3"}],"data1":[{"alarmOn":"true","alarmTime":"06:00","alarmKind":"mild","alarmVol":"60","awake1Start":"07:00","awake1End":"11:50","awake2Start":"11:50","awake2End":"16:50"}]}

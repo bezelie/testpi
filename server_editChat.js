@@ -103,8 +103,6 @@ var routes = { // パスごとの表示内容を連想配列に格納
 var errorMsg = ""; // これが空欄のときはエラー無し
 var posts = "";    // ブラウザからPOSTで送られてきたデータ
 var intent = "";   // 今回選択されたintent（単数）
-// text = "";
-// intent = "";
 
 // 関数定義
 function getLocalAddress() { // IPアドレスの取得
@@ -151,17 +149,6 @@ function pageWrite (res){ // ページ描画
     res.end();
 }
 
-function delItem (query,posts){ // アイテムの削除
-    text = '';
-    for (var i=0;i < posts.length; i++ ) {
-        if (i != query.delNum){
-            text = text+posts[i]+'\n';
-        }
-    }
-    posts.splice(query.delNum, 1); // postsからもdelNum行を削除
-    return text;
-}
-
 function delChk (query, posts, intent){ // 削除しようとしている番号が、選択中のインテントのものかを調べる
     errorMsg = "番号が違います";
     for (var i=0;i < posts.length; i++ ) {
@@ -172,14 +159,18 @@ function delChk (query, posts, intent){ // 削除しようとしている番号�
     return errorMsg;
 }
 
-function readText(file){
-    text = fs.readFileSync(__dirname + "/" + file, 'utf8'); // 同期でファイルを読む
-    return text;
-}
-
-function readPosts(text){
+function readPosts(file){
+    var text = fs.readFileSync(__dirname + "/" + file, 'utf8'); // 同期でファイルを読む
     posts = new CSV(text, {header:false}).parse(); //  TEXTをCSVを仲介してリスト変数に変換する
     return posts;
+}
+
+function obj2csv(posts){
+    text = '';
+    for (var i=0;i < posts.length; i++ ) {
+        text = text+posts[i]+'\n';
+        }
+    return text;
 }
 
 //-------------------------------------------------------------------------------------------------------
@@ -198,17 +189,16 @@ function routing(req, res){ // requestイベントが発生したら実行され
     // GETリクエストの場合  -------------------------------------------------------------------------------
     if (req.method === "GET"){
         if (url_parts.pathname === "/editIntent" || url_parts.pathname === "/selectIntent4entity" || url_parts.pathname === "/selectIntent4dialog"){ 
-            text = fs.readFileSync(__dirname + "/chatIntent.csv", 'utf8'); // 同期でファイルを読む
-            posts = new CSV(text, {header:false}).parse(); //  CSVファイルをリスト変数に変換する
+            posts = readPosts("chatIntent.csv");
             pageWrite(res);
             return;
-        } else if (url_parts.pathname == "/starting_pythonApp"){ // 
+        } else if (url_parts.pathname == "/starting_pythonApp"){ // ラズパイ再起動
             pageWrite(res);
             var COMMAND = 'sh '+__dirname+'/setting_enableApp.sh';
             exec(COMMAND, {maxBuffer : 1024 * 1024 * 1024}, function(error, stdout, stderr) {
             // reboot(); // ラズパイを再起動させる。
             }); // end of exec
-        } else if (url_parts.pathname == "/stop_pythonApp"){ //
+        } else if (url_parts.pathname == "/stop_pythonApp"){ // アプリ停止
             pageWrite(res);
             var COMMAND = "sh stop_pythonApp.sh";
             exec(COMMAND, function(error, stdout, stderr) {
@@ -216,13 +206,13 @@ function routing(req, res){ // requestイベントが発生したら実行され
             var COMMAND = "sh stop_julius.sh";
             exec(COMMAND, function(error, stdout, stderr) {
             }); // end of exec
-        } else if (url_parts.pathname === "/disableServer"){ // 
+        } else if (url_parts.pathname === "/disableServer"){ // サーバーを無効化して再起動
             pageWrite(res);
             var COMMAND = 'sh '+__dirname+'/setting_disableServer.sh';
             exec(COMMAND, function(error, stdout, stderr) {
                reboot();
             }); // end of exec
-        } else if (url_parts.pathname === "/editTime"){ // 
+        } else if (url_parts.pathname === "/editTime"){ // 時間編集
             var json = fs.readFileSync(__dirname + "/data_chat.json", "utf-8");  // 同期でファイルを読む
             obj_config = JSON.parse(json); // JSONをオブジェクトに変換する。ejsからも読めるようにグローバルで定義する
             pageWrite(res)
@@ -239,75 +229,82 @@ function routing(req, res){ // requestイベントが発生したら実行され
         req.on("end", function() {
             var query = qs.parse(req.data); // 全受信データをquerry stringでパースする。
         // ----------------------------------------------------------------------------------------------
-            if (url_parts.pathname == "/editDialog"){ // 
-                text = readText("chatDialog.csv");
-                posts = readPosts(text);
-                if (query.intent){ // intentを選択した場合の処理。
-                    intent = query.intent; // グローバル変数intentに代入。
-                    errorMsg = " ";
-                } else if (query.newItem){ // 新規追加の場合。重複をチェックする。
+            if (url_parts.pathname == "/editIntent"){ // インテントの編集
+                posts = readPosts("chatIntent.csv");
+                if (query.newItem){ // 新規追加
                     for (var i=0;i < posts.length; i++ ) {
-                        if (posts [i][0] == intent && posts[i][1] == query.newItem){
+                        if (posts[i][1] == query.newItem){
                             errorMsg = "すでに登録されています";
                         }
                     }
-                    if (errorMsg == ""){ // 重複がなかった場合。追加する。
-                        text = text+intent+','+query.newItem+'\n';
-                        posts.push([intent,query.newItem]); // newItemをpostの配列に入れる。
+                    if (errorMsg == ""){ 
+                        posts.push(['common',query.newItem]); // newItemをpostの配列に入れる。
                     }
                 } else if (query.delNum){ // 削除
-                    if(isNaN(query.delNum)){ // 数字じゃない場合
+                    if(isNaN(query.delNum)){
                         errorMsg = "数字(半角)を入力してください";
-                    }else{
-                        errorMsg = delChk(query, posts, intent); // 数字が正しいか確認
+                    } else if(query.delNum >= posts.length) {
+                        errorMsg = "数字が大きすぎます";
+                    } else {
+                        intent = posts[query.delNum][1];
+                        posts = readPosts("chatEntity.csv");
+                        for (var i=0;i < posts.length; i++ ) {
+                            if (posts[i][0] == intent){
+                                errorMsg = "インテントを削除するには、対応するエンティティをすべて削除してください。";
+                            }
+                        }
+                        posts = readPosts("chatDialog.csv");
+                        for (var i=0;i < posts.length; i++ ) {
+                            if (posts[i][0] == intent){
+                                errorMsg = "インテントを削除するには、対応するダイアログをすべて削除してください。";
+                            }
+                        }
+                        posts = readPosts("chatIntent.csv");
                     }
-                    if (errorMsg == ""){
-                        text = delItem(query,posts); // アイテムを削除
+                    if (errorMsg == ""){ // エラーがなかったのでアイテム削除
+                        posts.splice(query.delNum, 1); // postsからdelNum行を削除
                     }
-                } else { //
+                } else { // 必要ないが念のため。
                 }
-                // chatDialog.csvに結果を書き出す。
                 if (errorMsg == ""){
-                    fs.writeFileSync(__dirname + '/chatDialog.csv', text , 'utf8', function (err) { // ファイルに書込
+                    text = obj2csv(posts);
+                    fs.writeFileSync(__dirname + '/chatIntent.csv', text , 'utf8', function (err) { // ファイルに書込
                     });
                 }
                 pageWrite(res);
-            } else if (url_parts.pathname == "/editEntity"){ // editEntity -------------------------------------------
-                text = readText("chatEntity.csv");
-                posts = readPosts(text);
+            } else if (url_parts.pathname == "/editEntity"){ // エンティティの編集
+                posts = readPosts("chatEntity.csv");
                 if (query.intent){ // selectIntentから来た場合
                     intent = query.intent; // グローバル変数intentに代入。
                     errorMsg = " ";
                 } else if (query.newItem){ // 新規追加
-                    // ひらがなじゃなかったらエラー
-                    for (i=0;i<query.newItem.length;i++){
+                    for (i=0;i<query.newItem.length;i++){ // ひらがなかチェック
                         var unicode = query.newItem.charCodeAt(i);
                         if ( unicode<0x3040 || unicode>0x309f ){
                             errorMsg = "エンティティはひらがな(全角)で入力してください";
                         }
                     }
-                    for (var i=0;i < posts.length; i++ ) {
+                    for (var i=0;i < posts.length; i++ ) { // 重複チェック
                         if (posts [i][0] == intent && posts[i][1] == query.newItem){
                             errorMsg = "すでに登録されています";
                         }
                     }
                     if (errorMsg == ""){ // エラーがなかったのでアイテム追加
-                        text = text+intent+','+query.newItem+'\n';
                         posts.push([intent,query.newItem]); // newItemをpostの配列に入れる。
                     }
                 } else if (query.delNum){ // 削除
-                    if(isNaN(query.delNum)){
+                    if(isNaN(query.delNum)){ // 数値かチェック
                         errorMsg = "数字(半角)を入力してください";
-                    }else{
-                        errorMsg = delChk(query, posts, intent); // 数字が適切か確認
+                    }else{ // 選択中のインテントにひもづくエンティティかどうかチェック
+                        errorMsg = delChk(query, posts, intent);
                     }
-                    if (errorMsg == ""){
-                        text = delItem(query,posts); // アイテムを削除
+                    if (errorMsg == ""){ // エラーがなかったのでアイテム削除
+                        posts.splice(query.delNum, 1); // postsからdelNum行を削除
                     }
-                } else { //
+                } else { // 必要ないが念の為
                 }
-                // chatEntity.csvに結果を書き込み
-               if (errorMsg == ""){
+                if (errorMsg == ""){ // エラーがなかったらファイルに書き込み
+                   text = obj2csv(posts);
                    fs.writeFileSync(__dirname + '/chatEntity.csv', text , 'utf8', function (err) { // ファイルに書込
                        // csvファイルをタブセパレート(tsv)に変換
                        var COMMAND = 'sudo sed -E "s/,/    /g" chatEntity.csv > chatEntity.tsv'; // csvをtsvに変換
@@ -320,57 +317,43 @@ function routing(req, res){ // requestイベントが発生したら実行され
                    });
                 }
                 pageWrite(res);
-            } else if (url_parts.pathname == "/editIntent"){ // editIntent -------------------------------------------
-                text = readText("chatIntent.csv");
-                posts = readPosts(text);
-                if (query.newItem){ // 新規追加
+            } else if (url_parts.pathname == "/editDialog"){ // ダイアログの編集
+                posts = readPosts("chatDialog.csv");
+                if (query.intent){ // intentを選択した場合の処理。
+                    intent = query.intent; // グローバル変数intentに代入。
+                    errorMsg = " ";
+                } else if (query.newItem){ // 新規追加の場合。重複をチェックする。
                     for (var i=0;i < posts.length; i++ ) {
-                        if (posts[i][1] == query.newItem){
+                        if (posts [i][0] == intent && posts[i][1] == query.newItem){
                             errorMsg = "すでに登録されています";
                         }
                     }
-                    if (errorMsg == ""){ 
-                        text = text+'common,'+query.newItem+'\n';
-                        posts.push(['common',query.newItem]); // newItemをpostの配列に入れる。
+                    if (errorMsg == ""){ // 重複がなかった場合。追加する。
+                        posts.push([intent,query.newItem]); // newItemをpostの配列に入れる。
                     }
                 } else if (query.delNum){ // 削除
-                    if(isNaN(query.delNum)){
+                    if(isNaN(query.delNum)){ // 数字じゃない場合
                         errorMsg = "数字(半角)を入力してください";
-                    } else if(query.delNum >= posts.length) {
-                        errorMsg = "数字が大きすぎます";
-                    } else {
-                        intent = posts[query.delNum][1];
-                        text = readText("chatEntity.csv");
-                        posts = readPosts(text);
-                        for (var i=0;i < posts.length; i++ ) {
-                            if (posts[i][0] == intent){
-                                errorMsg = "インテントを削除するには、対応するエンティティをすべて削除してください。";
-                            }
-                        }
-                        text = readText("chatDialog.csv");
-                        posts = readPosts(text);
-                        for (var i=0;i < posts.length; i++ ) {
-                            if (posts[i][0] == intent){
-                                errorMsg = "インテントを削除するには、対応するダイアログをすべて削除してください。";
-                            }
-                        }
-                        text = readText("chatIntent.csv");
-                        posts = readPosts(text);
-                   }
-                } else { // 必要ないが念のため。
+                    }else{
+                        errorMsg = delChk(query, posts, intent);
+                    }
+                    if (errorMsg == ""){ // エラーがなかったので削除
+                        posts.splice(query.delNum, 1); // postsからdelNum行を削除
+                    }
+                } else { //必要ないが念の為
                 }
-                if (errorMsg == ""){
-                    text = delItem(query,posts);
-                    fs.writeFileSync(__dirname + '/chatIntent.csv', text , 'utf8', function (err) { // ファイルに書込
+                if (errorMsg == ""){ // エラーがなかったらファイルに書き込み
+                    text = obj2csv(posts);
+                    fs.writeFileSync(__dirname + '/chatDialog.csv', text , 'utf8', function (err) { // ファイルに書込
                     });
                 }
                 pageWrite(res);
-            } else if (url_parts.pathname == "/setTime"){ //  -------------------------------------------
+            } else if (url_parts.pathname == "/setTime"){ // 時間設定の保存
                 obj_config.data1[0] = qs.parse(req.data);
                 fs.writeFile(__dirname + '/data_chat.json', JSON.stringify(obj_config), function (err) {
                 });
                 pageWrite(res);
-            } else { // 該当せず -------------------------------------------------------------------------------
+            } else { // 該当せず
                 res.writeHead(200, {'Content-Type': 'text/html; charset=UTF-8'});
                 res.write("NO-POST!!");
                 res.end();
@@ -380,6 +363,7 @@ function routing(req, res){ // requestイベントが発生したら実行され
     } // end of POST request
 } // end of doRequest
 
+// ---------------------------------------------------------------------------------------------------------
 // IPアドレスの設定
 var host = getLocalAddress().ipv4[0].address; // 現在のIPアドレスを取得する。
 // var host = 'localhost'         // macやwindows10以降であれば、localhostで指定できる。
