@@ -305,17 +305,15 @@ function routing(req, res){ // requestイベントが発生したら実行され
                 }
                 if (errorMsg == ""){ // エラーがなかったらファイルに書き込み
                    text = obj2csv(posts);
-                   fs.writeFileSync(__dirname + '/chatEntity.csv', text , 'utf8', function (err) { // ファイルに書込
-                       // csvファイルをタブセパレート(tsv)に変換
-                       var COMMAND = 'sudo sed -E "s/,/    /g" chatEntity.csv > chatEntity.tsv'; // csvをtsvに変換
-                       exec(COMMAND, function(error, stdout, stderr) { 
-                           // tsvファイルをjuliusのdic形式に変換
+                   fs.writeFile(__dirname + '/chatEntity.csv', text , 'utf8', function (err) {
+                      var COMMAND = 'sudo sed -E "s/,/    /g" chatEntity.csv > chatEntity.tsv'; // csvをtsvに変換
+                      exec(COMMAND, function(error, stdout, stderr) { // tsvファイルをjuliusのdic形式に変換
                            var COMMAND = 'iconv -f utf8 -t eucjp chatEntity.tsv | /home/pi/dictation-kit-v4.4/src/julius-4.4.2/gramtools/yomi2voca/yomi2voca.pl > chatEntity.dic'; // tsvをdicに変換
                            exec(COMMAND, function(error, stdout, stderr) {
                            });
-                       });
-                   });
-                }
+                       }); //end of exec
+                   }); // end of fs
+                } // end of if
                 pageWrite(res);
             } else if (url_parts.pathname == "/editDialog"){ // ダイアログの編集
                 posts = readPosts("chatDialog.csv");

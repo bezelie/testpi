@@ -35,13 +35,13 @@ def writeFile(text):
   f = open ('out.txt', 'r')
   textBefore = ""
   for row in f:
-  #  print row+"\n"
+    print row+"\n"
     textBefore = textBefore + row
   f.close()
   f = open ('out.txt', 'w')
   f.write(textBefore+text+"\n")
   f.close()
-#  sleep(0.1)
+  sleep(0.1)
 
 def replyMessage(keyWord):
   # writeFile("reply start")
@@ -93,41 +93,41 @@ try:
   bezelie.actHappy()
   subprocess.call('sh openJTalk.sh "もしもし"', shell=True)
   bezelie.moveCenter()
-  writeFile("start")
+#  writeFile("start")
   while True:
     if "</RECOGOUT>\n." in data:  # RECOGOUTツリーの最終行を見つけたら以下の処理を行う
       try:
         # dataから必要部分だけ抽出し、かつエラーの原因になる文字列を削除する。
         data = data[data.find("<RECOGOUT>"):].replace("\n.", "").replace("</s>","").replace("<s>","")
-        writeFile("data setted----------------------")
+#        writeFile("data setted----------------------")
         # writeFile(data)
         # fromstringはXML文字列からコンテナオブジェクトであるElement型に直接 $
         root = ET.fromstring('<?xml version="1.0"?>\n' + data)
         # root = ET.fromstring('<?xml version="1.0"?>\n' + data[data.find("<RECOGOUT>"):].replace("\n.", ""))
-        writeFile("root setted----------------------")
+#        writeFile("root setted----------------------")
         # writeFile(root)
         keyWord = ""
         for whypo in root.findall("./SHYPO/WHYPO"):
           keyWord = keyWord + whypo.get("WORD")
           # writeFile("."+keyWord)
         print "You......."+keyWord
-        writeFile("lets start reply")
+#        writeFile("lets start reply")
         replyMessage(keyWord)
-        writeFile("answerd")
+#        writeFile("answerd")
       except:
         print "------------------------"
-        writeFile("except")
+#        writeFile("except")
       data = ""  # 認識終了したのでデータをリセットする
     else:
       data = data + client.recv(bufferSize)  # Juliusサーバーから受信
-      writeFile("data added")
+#      writeFile("data added")
 
         # /RECOGOUTに達するまで受信データを追加していく
 
 except KeyboardInterrupt:
   # CTRL+Cで終了
   print "  終了しました"
-  writeFile("---------------------------")
+#  writeFile("---------------------------")
   p.kill()
   subprocess.call(["kill " + pid], shell=True) # juliusのプロセスを終了
   client.close()
