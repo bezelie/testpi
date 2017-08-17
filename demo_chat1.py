@@ -12,9 +12,11 @@ import socket                      # ソケット通信モジュール
 import json                        #
 import csv                         #
 
-csvFile = "chatDialog.csv"   # 対話リスト
-jsonFile = "data_chat.json"  # 設定ファイル
-sensitivity = 50             # マイク感度の設定。62が最大値。
+csvFile = "chatDialog.csv"           # 対話リスト
+jsonFile = "data_chat.json"          # 設定ファイル
+openJTalkFile = "shell_openJTalk.sh" #
+juliusFile = "shell_juliusChat.sh"   #
+sensitivity = 50                     # マイク感度の設定。62が最大値。
 
 # Variables
 muteTime = 1      # 音声入力を無視する時間
@@ -29,9 +31,10 @@ sleep(0.5)
 
 # Julius
 # Juliusをサーバモジュールモードで起動＝音声認識サーバーにする
-subprocess.call('sh openJTalk.sh "ちょっとまってて"', shell=True)
+subprocess.call("sh "+openJTalkFile+" "+"起動します", shell=True)
+sleep(1)
 print "Please Wait For A While"  # サーバーが起動するまで時間がかかるので待つ
-p = subprocess.Popen(["sh chat.sh"], stdout=subprocess.PIPE, shell=True)
+p = subprocess.Popen(["sh "+juliusFile], stdout=subprocess.PIPE, shell=True)
 # subprocess.PIPEは標準ストリームに対するパイプを開くことを指定するための特別な値
 pid = p.stdout.read()  # 終了時にJuliusのプロセスをkillするためプロセスIDをとっておく 
 print "Julius's Process ID =" +pid
@@ -84,7 +87,7 @@ def replyMessage(keyWord):        # 対話
 
   if timeCheck(): # 活動時間かどうかをチェック
     bez.moveRnd()
-    subprocess.call('sh openJTalk.sh "'+data[ansNum][1]+'"', shell=True)
+    subprocess.call("sh "+openJTalkFile+" "+data[ansNum][1], shell=True)
     bez.stop()
   else:
     print "活動時間外なので発声・動作しません"
@@ -136,11 +139,11 @@ def alarm():
         subprocess.call('sudo amixer -q sset Mic 0', shell=True)  #
         if alarmKind == 'mild':
           bez.moveAct('happy')
-          subprocess.call('sh openJTalk.sh "朝ですよ。"', shell=True)
+          subprocess.call("sh "+openJTalkFile+" "+"朝ですよ", shell=True)
           bez.stop()
         else:
           bez.moveAct('happy')
-          subprocess.call('sh openJTalk.sh "朝だよー、起きてー、起きてー、起きてー"', shell=True)
+          subprocess.call("sh "+openJTalkFile+" "+"朝だよ起きて起きてー", shell=True)
           bez.stop()
         sleep (muteTime)
         subprocess.call('sudo amixer -q sset Mic '+str(sensitivity), shell=True)  #
@@ -167,7 +170,7 @@ def main():
     data = ""
     print "Please Speak"
     bez.moveAct('happy')
-    subprocess.call('sh openJTalk.sh "どうも"', shell=True)
+    subprocess.call("sh "+openJTalkFile+" "+"どうもです", shell=True)
     bez.stop()
     while True:
       if "</RECOGOUT>\n." in data:  # RECOGOUTツリーの最終行を見つけたら以下の処理を行う
