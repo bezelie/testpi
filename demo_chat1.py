@@ -7,7 +7,7 @@ from time import sleep             # ウェイト処理
 import xml.etree.ElementTree as ET # XMLエレメンタルツリー変換モジュール
 import subprocess                  #
 import threading                   # マルチスレッド処理
-import bezelie                     # べゼリー専用モジュール
+import bezelie_new as bezelie      # べゼリー専用モジュール
 import socket                      # ソケット通信モジュール
 import json                        #
 import csv                         #

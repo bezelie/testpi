@@ -9,11 +9,17 @@ import wave
 import bezelie
 
 # Pyaudio
+# micro USB mic
+RATE = 44100              #サンプル周波数 取り込み１回分の時間
+CHUNK = 2**9             #取り込み１回分のデータサイズ 512
+# other USB mic
+# RATE = 16000              #サンプル周波数 取り込み１回分の時間
+# CHUNK = 2**9             #取り込み１回分のデータサイズ 2048
+
 FORMAT = pyaudio.paInt16  #データフォーマットは int16型
 CHANNELS = 1              #モノラル
-RATE = 16000              #サンプル周波数 取り込み１回分の時間
-CHUNK = 2**11             #取り込み１回分のデータサイズ
 RECORD_SECONDS = 2        #録音する時間の長さ
+DEVICE_INDEX = 0
 WAVE_OUTPUT_FILENAME = "test2.wav"
 audio = pyaudio.PyAudio() #pyaudioのインスタンスaudioを生成
 
@@ -31,7 +37,7 @@ try:
 # Record
     stream = audio.open(format=FORMAT, channels=CHANNELS,
       rate=RATE, input=True,  #入力モード
-      input_device_index=0,   #デバイスのインデックス番号
+      input_device_index = DEVICE_INDEX,
       frames_per_buffer=CHUNK)
     frames = []
     for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
